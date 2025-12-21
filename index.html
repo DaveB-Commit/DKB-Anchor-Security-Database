@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DKB Anchor Security Services Ltd. Management System</title>
     <!-- Favicon Tag -->
-    <link rel="icon" href="DKB Anchor Logo.png" type="image/x-icon">
+    <link id="faviconTag" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' ry='20' fill='%230A2351'/><path d='M50 8l-30 15v30l30 15 30-15v-30l-30-15z' fill='white'/></svg>" type="image/svg+xml">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
@@ -85,7 +86,7 @@
         </div>
     </div>
 
-    <!-- Sidebar and Main Workspace -->
+    <!-- Main Application UI -->
     <div id="appContainer" class="flex flex-col md:flex-row h-screen hidden overflow-hidden">
         <!-- Sidebar -->
         <aside id="sidebar" class="bg-sagittarius-blue text-sagittarius-white w-full md:w-64 fixed md:static top-0 left-0 h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col shadow-2xl">
@@ -96,7 +97,7 @@
                         <path d="M20 2V20M20 20V38M20 20H38M20 20H2" stroke="var(--sagittarius-gold)" stroke-width="2"/>
                         <path d="M12 28L20 20L28 12M12 12L20 20L28 28" stroke="var(--sagittarius-gold)" stroke-width="2"/>
                     </svg>
-                    <img id="customLogo" src="DKB Anchor Logo.png" alt="Company Logo" class="hidden max-w-full max-h-full object-contain p-1">
+                    <img id="customLogo" src="" alt="Company Logo" class="hidden max-w-full max-h-full object-contain p-1">
                 </div>
                 <nav id="sidebarNav" class="space-y-1">
                     <a href="#" class="nav-item flex items-center p-3 rounded-lg transition-all bg-sagittarius-gold text-sagittarius-blue font-bold" data-module="dashboard" data-perm="any">Dashboard</a>
@@ -134,7 +135,7 @@
             <!-- Dashboard -->
             <div id="dashboard" class="module space-y-8 transform transition-all duration-300">
                 <div class="flex justify-between items-end mb-4">
-                    <h2 class="text-2xl font-black text-sagittarius-blue/80 uppercase tracking-tight">Performance Overview</h2>
+                    <h2 class="text-2xl font-black text-sagittarius-blue/80 uppercase tracking-tight">Performance Intelligence</h2>
                     <div class="text-right">
                         <p id="currentTimeDisplay" class="text-xl font-black font-mono text-sagittarius-blue">--:--:--</p>
                     </div>
@@ -152,6 +153,7 @@
                         <p class="text-[10px] uppercase font-black text-white/50 truncate">Guards</p>
                         <p id="totalGuardsMetric" class="text-2xl md:text-3xl font-black truncate">0</p>
                     </div>
+                    <!-- Financial Metrics (Hidden for Guard role) -->
                     <div class="financial-metric bg-sagittarius-blue text-white p-5 rounded-2xl shadow-xl border-b-4 border-sagittarius-gold overflow-hidden">
                         <p class="text-[10px] uppercase font-black text-white/50 truncate">Mo. Revenue</p>
                         <p id="totalRevenueMetric" class="text-xl md:text-2xl font-black truncate">₵0.00</p>
@@ -178,7 +180,7 @@
                 </div>
             </div>
 
-            <!-- Privilege/Accounts Module -->
+            <!-- Access Management Module -->
             <div id="account-management" class="module hidden space-y-6">
                 <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Privilege Controls</h2>
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-black/5">
@@ -219,7 +221,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Staff Directory</h2>
                     <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                        <input type="text" id="staffSearchInput" placeholder="Filter roster..." class="w-full sm:w-64 border rounded-lg p-2 outline-none focus:ring-2 focus:ring-sagittarius-blue text-sm font-bold">
+                        <input type="text" id="staffSearchInput" placeholder="Filter personnel..." class="w-full sm:w-64 border rounded-lg p-2 outline-none focus:ring-2 focus:ring-sagittarius-blue text-sm font-bold">
                         <button id="openUserFormBtn" class="bg-sagittarius-gold text-sagittarius-blue font-black py-2 px-6 rounded-lg shadow hover:scale-105 transition-transform whitespace-nowrap">Hire Personnel</button>
                     </div>
                 </div>
@@ -245,7 +247,7 @@
 
             <!-- System Logs Module -->
             <div id="system-logs" class="module hidden space-y-8">
-                <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Audit Intelligence</h2>
+                <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Audit Engine</h2>
                 <div class="bg-white p-8 rounded-2xl shadow-xl border border-black/5 mb-8">
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <button id="downloadIncidentsBtn" class="bg-sagittarius-blue text-white p-4 rounded-xl font-bold uppercase text-[10px]">Export Incidents</button>
@@ -270,7 +272,6 @@
     </div>
 
     <!-- Modals -->
-    <!-- Personnel Modal -->
     <div id="userFormModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border-t-8 border-sagittarius-blue">
             <h3 class="text-2xl font-black text-sagittarius-blue uppercase mb-8 flex items-center"><span class="w-2 h-8 bg-sagittarius-gold mr-3 rounded-full"></span>Staff Profile Definition</h3>
@@ -336,66 +337,6 @@
         </div>
     </div>
 
-    <!-- Edit Payroll Modal -->
-    <div id="editPayrollModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl border-t-8 border-sagittarius-blue max-h-[90vh] overflow-y-auto">
-            <h3 class="text-2xl font-black text-sagittarius-blue uppercase mb-6 flex items-center"><span class="w-2 h-8 bg-sagittarius-gold mr-3 rounded-full"></span>Monthly Dossier</h3>
-            <form id="editPayrollForm" class="space-y-5">
-                <input type="hidden" id="editPayrollUserId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <input type="number" id="editRevenue" required placeholder="Revenue contribution" class="w-full border p-3 rounded-xl outline-none">
-                    <input type="number" id="editDaysWorked" required placeholder="Duty Days" class="w-full border p-3 rounded-xl outline-none">
-                    <input type="number" id="editGrossSalary" readonly placeholder="Standard Gross" class="w-full border p-3 rounded-xl bg-gray-50 font-bold outline-none">
-                    <input type="number" id="editOvertime" readonly placeholder="Overtime" class="w-full border p-3 rounded-xl bg-gray-50 font-bold outline-none">
-                    <input type="number" id="editBonus" required placeholder="Bonus" class="w-full border p-3 rounded-xl outline-none">
-                    <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Payment Status</label>
-                        <select id="editPaymentStatus" class="w-full border p-3 rounded-xl font-bold bg-gray-50 outline-none"><option value="Pending">Pending</option><option value="Paid">Paid</option></select>
-                    </div>
-                </div>
-                <div class="flex justify-end pt-6 border-t mt-4">
-                    <button type="button" id="closeEditPayrollBtn" class="px-8 py-3 font-bold text-gray-400 hover:bg-gray-100 transition-all mr-3">Cancel</button>
-                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-3 rounded-xl font-black uppercase shadow-xl">Authorize Entry</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Incident Modal -->
-    <div id="incidentFormModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl border-t-8 border-sagittarius-blue max-h-[90vh] overflow-y-auto">
-            <h3 class="text-2xl font-black text-sagittarius-blue uppercase mb-6 flex items-center"><span class="w-2 h-8 bg-sagittarius-gold mr-3 rounded-full"></span>Incident Dossier</h3>
-            <form id="incidentForm" class="space-y-4">
-                <input type="hidden" id="incidentId">
-                <input type="text" id="incidentTitle" required placeholder="Subject / Title" class="w-full border p-3 rounded-xl outline-none">
-                <textarea id="incidentDescription" rows="4" required placeholder="Full Narrative..." class="w-full border p-3 rounded-xl outline-none"></textarea>
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="incidentLocation" required placeholder="Site Location" class="w-full border p-3 rounded-xl outline-none">
-                    <input type="text" id="incidentReporter" required placeholder="Reporting Officer" class="w-full border p-3 rounded-xl outline-none">
-                </div>
-                <div id="resolutionCommentField" class="hidden space-y-1">
-                    <label class="block text-[10px] uppercase font-black text-sagittarius-blue px-1">Management Resolution Protocol</label>
-                    <textarea id="resolutionComment" rows="3" class="w-full border p-3 rounded-xl bg-yellow-50 outline-none border-sagittarius-gold/30" placeholder="Describe actions taken..."></textarea>
-                </div>
-                <div class="flex justify-end pt-4 border-t">
-                    <button type="button" id="closeIncidentFormBtn" class="px-8 py-3 font-bold text-gray-400 hover:bg-gray-100 transition-all mr-3">Cancel</button>
-                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-3 rounded-xl font-black uppercase active:scale-95 transition-all">Commit Dossier</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Alert Modal -->
-    <div id="alertModalContainer" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl max-sm w-full border-4 border-sagittarius-gold">
-            <h3 id="alertModalTitle" class="text-xl font-black text-sagittarius-blue uppercase mb-2 leading-tight"></h3>
-            <p id="alertModalMessage" class="text-gray-500 mb-6 font-medium"></p>
-            <div id="alertButtons" class="flex justify-end space-x-2">
-                <button id="alertModalCancel" class="bg-gray-400 text-white px-6 py-2 rounded-lg font-black uppercase text-sm hidden">Cancel</button>
-                <button id="alertModalOk" class="bg-sagittarius-blue text-white px-8 py-2 rounded-lg font-black uppercase text-sm shadow-lg">OK</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Logic Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -437,7 +378,7 @@
         const accountsCol = collection(db, 'artifacts', appId, 'public', 'data', 'userAccounts');
         const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
 
-        // --- HOISTED CORE UTILITY FUNCTIONS ---
+        // --- CORE FUNCTIONS (TOP LEVEL DEFINITIONS) ---
 
         function getRateByRole(role) { return ROLE_RATES[role] || 38.462; }
         function getSelectedMonth() { const el = document.getElementById('payrollMonth'); return el ? parseInt(el.value) : 1; }
@@ -481,7 +422,7 @@
             if(!container) return;
             const toast = document.createElement('div');
             toast.className = 'bg-sagittarius-blue text-white p-4 rounded-xl shadow-2xl border-l-8 border-sagittarius-gold animate-notification pointer-events-auto';
-            toast.innerHTML = `<p class="text-[10px] font-black uppercase text-sagittarius-gold mb-1">System Intelligence</p><p class="text-sm font-bold">${title}</p><p class="text-xs opacity-80">${message}</p>`;
+            toast.innerHTML = `<p class="text-[10px] font-black uppercase text-sagittarius-gold mb-1">System intelligence</p><p class="text-sm font-bold">${title}</p><p class="text-xs opacity-80">${message}</p>`;
             container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; toast.style.transition = 'all 0.3s ease-in'; setTimeout(() => toast.remove(), 300); }, 5000);
         }
@@ -505,7 +446,7 @@
                     item.classList.add('hidden');
                 }
             });
-            // Financial cards dashboard hiding
+            // Hide financial metrics for guard role
             const financialMetrics = document.querySelectorAll('.financial-metric');
             financialMetrics.forEach(el => {
                 if (userPermissions === 'guard') el.classList.add('hidden');
@@ -550,7 +491,6 @@
             const otEl = document.getElementById('editOvertime'); if(otEl) otEl.value = overtime.toFixed(2);
         }
 
-        // --- RENDERING HANDLERS ---
         function renderDashboardMetrics() {
             const nowTime = new Date(), m = nowTime.getMonth() + 1, y = nowTime.getFullYear();
             const curRecs = allPayrollRecords.filter(r => r.month === m && r.year === y);
@@ -567,6 +507,7 @@
             updateField('totalRevenueMetric', "₵" + rev.toLocaleString());
             updateField('totalSalariesPaidMetric', "₵" + sals.toLocaleString());
             updateField('totalProfitMetric', "₵" + (rev - sals).toLocaleString());
+            filterNavByRole(); // Ensure cards update visibility on data sync
         }
 
         function renderIncidents(list) {
@@ -624,7 +565,7 @@
             guards.forEach(g => {
                 const div = document.createElement('div');
                 div.className = 'p-4 bg-white rounded-xl shadow-sm border flex justify-between items-center';
-                div.innerHTML = `<div><p class="font-black text-sagittarius-blue uppercase leading-tight">${g.firstName} ${g.lastName}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${g.employeeId} • ${g.location}</p></div><a href="tel:${g.phoneNumber}" class="text-xs font-black text-sagittarius-blue underline">${g.phoneNumber}</a>`;
+                div.innerHTML = `<div><p class="font-black text-sagittarius-blue uppercase leading-tight">${g.firstName} ${g.lastName}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${g.employeeId} • <b>${g.location}</b></p></div><a href="tel:${g.phoneNumber}" class="text-xs font-black text-sagittarius-blue underline">${g.phoneNumber}</a>`;
                 container.appendChild(div);
             });
         }
@@ -677,8 +618,16 @@
             onSnapshot(settingsDocRef, s => { if(s.exists()) { settings = s.data(); applyBranding(); } }, (err) => console.error("Snapshot error Settings", err));
         }
 
-        function applyBrandingUI() {
-            applyBranding();
+        function applyBranding() {
+            const el = document.getElementById('mainCompanyNameDisplay'); if(el) el.innerText = settings.companyName;
+            const input = document.getElementById('companyNameInput'); if(input) input.value = settings.companyName;
+            const logo = settings.logoUrl || "";
+            if (logo) {
+                const customLogo = document.getElementById('customLogo');
+                if(customLogo) { customLogo.src = logo; customLogo.classList.remove('hidden'); }
+                const defLogo = document.getElementById('defaultLogo'); if(defLogo) defLogo.classList.add('hidden');
+            }
+            document.body.classList.toggle('dark', settings.darkMode);
         }
 
         function downloadCSV(csvContent, fileName) {
@@ -706,7 +655,7 @@
                 allUsers.forEach(u => {
                     const rec = allPayrollRecords.find(r => r.userId === u.id && r.month === m && r.year === y) || {daysWorked:0, bonus:0, paymentStatus:'Pending'};
                     const r = getRateByRole(u.role);
-                    const gross = Math.min(rec.daysWorked, 26) * r + rec.bonus;
+                    const gross = Math.min(rec.daysWorked, 26) * r + Math.max(0, rec.daysWorked-26)*r + rec.bonus;
                     csv += `${escapeCSV(u.employeeId)},${escapeCSV(u.firstName)},${rec.daysWorked},${gross.toFixed(2)},${(gross*0.15).toFixed(2)},${(gross*0.85).toFixed(2)},${escapeCSV(rec.paymentStatus)}\n`;
                 });
                 downloadCSV(csv, `Payroll_${m}_${y}.csv`); logSystemActivity("Exported Payroll Summary", "Data Export");
@@ -726,7 +675,7 @@
 
         // --- APP INITIALIZATION ---
         window.onload = async () => {
-            const now = new Date(); // Scope Fixed
+            const now = new Date(); // Temporal Scope defined here
             setInterval(() => { const el = document.getElementById('currentTimeDisplay'); if(el) el.innerText = new Date().toLocaleTimeString(); }, 1000);
             
             const yrSel = document.getElementById('payrollYear');
@@ -738,7 +687,7 @@
             onAuthStateChanged(auth, u => {
                 currentUser = u;
                 if (currentUser) {
-                    const disp = document.getElementById('userIdDisplay'); if(disp) disp.innerText = 'Connected';
+                    const disp = document.getElementById('userIdDisplay'); if(disp) disp.innerText = 'Authenticated';
                     setupRealtimeListeners();
                 }
             });
@@ -798,15 +747,6 @@
                 await logSystemActivity(`Account provisioned for ${data.username}`, "Access Control");
             });
 
-            safeListen('editPayrollForm', 'submit', async (e) => {
-                e.preventDefault();
-                const sid = document.getElementById('editPayrollUserId').value, m = getSelectedMonth(), y = getSelectedYear();
-                const data = { userId: sid, month: m, year: y, revenue: parseFloat(document.getElementById('editRevenue').value) || 0, daysWorked: parseInt(document.getElementById('editDaysWorked').value) || 0, bonus: parseFloat(document.getElementById('editBonus').value) || 0, paymentStatus: document.getElementById('editPaymentStatus').value };
-                await setDoc(doc(payrollCol, `${sid}_${m}_${y}`), data);
-                document.getElementById('editPayrollModal')?.classList.add('hidden');
-                await logSystemActivity("Compensation entry finalized", "Finance");
-            });
-
             safeListen('incidentForm', 'submit', async (e) => {
                 e.preventDefault();
                 const id = document.getElementById('incidentId')?.value;
@@ -825,14 +765,7 @@
                 await logSystemActivity("Incident dossier committed", "Ops Action");
             });
 
-            safeListen('companySettingsForm', 'submit', async (e) => {
-                e.preventDefault();
-                const data = { companyName: document.getElementById('companyNameInput').value, logoUrl: document.getElementById('logoUrlInput').value, faviconUrl: "", darkMode: false };
-                await setDoc(settingsDocRef, data);
-                await logSystemActivity("Settings parameters committed", "Config");
-            });
-
-            // CLICKS Delegation
+            // Delegation
             window.addEventListener('click', async (e) => {
                 if (e.target.classList.contains('update-incident')) {
                     const i = allIncidents.find(item => item.id === e.target.dataset.id);
@@ -883,17 +816,6 @@
                     document.getElementById('accountRole').value = acc ? acc.role : 'ops';
                     document.getElementById('accountFormModal')?.classList.remove('hidden');
                 }
-                if (e.target.classList.contains('edit-payroll')) {
-                    const staffId = e.target.dataset.id, m = getSelectedMonth(), y = getSelectedYear();
-                    const rec = allPayrollRecords.find(r => r.userId === staffId && r.month === m && r.year === y) || { revenue: 0, daysWorked: 0, bonus: 0, paymentStatus: 'Pending' };
-                    document.getElementById('editPayrollUserId').value = staffId;
-                    document.getElementById('editRevenue').value = rec.revenue || 0;
-                    document.getElementById('editDaysWorked').value = rec.daysWorked || 0;
-                    document.getElementById('editBonus').value = rec.bonus || 0;
-                    document.getElementById('editPaymentStatus').value = rec.paymentStatus;
-                    updateEditCalculations();
-                    document.getElementById('editPayrollModal')?.classList.remove('hidden');
-                }
                 if (e.target.classList.contains('delete-user')) { if(await showModalDialog("Verify", "Terminate personnel?", true)) await deleteDoc(doc(usersCol, e.target.dataset.id)); }
                 if (e.target.classList.contains('delete-incident')) { if(await showModalDialog("Verify", "Remove record?", true)) await deleteDoc(doc(incidentsCol, e.target.dataset.id)); }
                 const passBtn = e.target.closest('.password-toggle');
@@ -908,7 +830,6 @@
             safeClick('closeUserFormBtn', () => document.getElementById('userFormModal')?.classList.add('hidden'));
             safeClick('closeIncidentFormBtn', () => document.getElementById('incidentFormModal')?.classList.add('hidden'));
             safeClick('closeAccountFormBtn', () => document.getElementById('accountFormModal')?.classList.add('hidden'));
-            safeClick('closeEditPayrollBtn', () => document.getElementById('editPayrollModal')?.classList.add('hidden'));
             safeClick('logoutBtn', () => location.reload());
             safeClick('menu-toggle', () => document.getElementById('sidebar')?.classList.toggle('-translate-x-full'));
             safeClick('alertModalOk', () => document.getElementById('alertModalContainer')?.classList.add('hidden'));
