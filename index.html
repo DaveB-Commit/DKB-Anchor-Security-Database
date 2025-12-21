@@ -6,7 +6,6 @@
     <title>DKB Anchor Security Services Ltd. Management System</title>
     <!-- Favicon Tag -->
     <link rel="icon" href="DKB Anchor Logo.png" type="image/x-icon">
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
@@ -22,9 +21,9 @@
             --sagittarius-white: #2D3748;
             --text-color: #F7FAFC;
         }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--sagittarius-white); }
-        ::-webkit-scrollbar-thumb { background: var(--sagittarius-blue); border-radius: 4px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar-thumb { background: var(--sagittarius-gold); border-radius: 10px; }
         
         .incident-table th, .incident-table td, .payroll-table th, .payroll-table td {
             padding: 12px;
@@ -38,6 +37,15 @@
             white-space: nowrap;
         }
         .incident-table tr:hover, .payroll-table tr:hover { background-color: rgba(0,0,0,0.02); }
+
+        /* Notification Animation */
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-notification {
+            animation: slideIn 0.3s ease-out forwards;
+        }
     </style>
     <script>
         tailwind.config = {
@@ -55,6 +63,9 @@
 </head>
 <body class="bg-sagittarius-white text-sagittarius-blue font-sans antialiased transition-colors duration-200">
 
+    <!-- Notification Container -->
+    <div id="toastContainer" class="fixed top-6 right-6 z-[10000] flex flex-col gap-3 w-80 pointer-events-none"></div>
+
     <!-- Login Modal -->
     <div id="loginFormModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999]">
         <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-sm border-t-8 border-sagittarius-blue">
@@ -62,18 +73,24 @@
             <p class="text-center text-gray-500 mb-6 text-sm font-bold">DKB Anchor Security Services Ltd.</p>
             <form id="loginForm" class="space-y-4">
                 <input type="text" id="loginUsername" required placeholder="Username" class="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-sagittarius-blue">
-                <input type="password" id="loginPassword" required placeholder="Password" class="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-sagittarius-blue">
+                <div class="relative">
+                    <input type="password" id="loginPassword" required placeholder="Password" class="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-sagittarius-blue">
+                    <button type="button" class="password-toggle absolute right-3 top-3 text-gray-400 hover:text-sagittarius-blue" data-target="loginPassword">
+                        <svg class="eye-open w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        <svg class="eye-closed w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88L4.59 4.59m9.53 9.53l5.29 5.29M21.543 12A9.97 9.97 0 0118 15.586m-1.214-1.214A10.05 10.05 0 0019.543 12c-1.274-4.057-5.064-7-9.542-7-1.274 0-2.484.232-3.593.657"></path></svg>
+                    </button>
+                </div>
                 <button type="submit" class="w-full bg-sagittarius-blue text-white py-3 rounded-lg font-black tracking-widest uppercase hover:bg-opacity-90 transition-all shadow-lg">Authenticate</button>
             </form>
         </div>
     </div>
 
-    <!-- Main Application Container -->
+    <!-- Sidebar and Main Workspace -->
     <div id="appContainer" class="flex flex-col md:flex-row h-screen hidden overflow-hidden">
         <!-- Sidebar -->
         <aside id="sidebar" class="bg-sagittarius-blue text-sagittarius-white w-full md:w-64 fixed md:static top-0 left-0 h-screen z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col shadow-2xl">
-            <div class="p-6">
-                <div id="logoContainer" class="w-16 h-16 flex items-center justify-center overflow-hidden rounded-xl bg-white/10 border border-sagittarius-gold/30 mb-8">
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div id="logoContainer" class="w-16 h-16 flex items-center justify-center overflow-hidden rounded-xl bg-white/10 border border-sagittarius-gold/30 mb-8 flex-shrink-0">
                     <svg id="defaultLogo" width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M20 38C10.0589 38 2 29.9411 2 20C2 10.0589 10.0589 2 20 2C29.9411 2 38 10.0589 38 20C38 29.9411 29.9411 38 20 38Z" fill="var(--sagittarius-white)" stroke="var(--sagittarius-gold)" stroke-width="2"/>
                         <path d="M20 2V20M20 20V38M20 20H38M20 20H2" stroke="var(--sagittarius-gold)" stroke-width="2"/>
@@ -81,31 +98,31 @@
                     </svg>
                     <img id="customLogo" src="DKB Anchor Logo.png" alt="Company Logo" class="hidden max-w-full max-h-full object-contain p-1">
                 </div>
-                <nav class="space-y-1">
-                    <a href="#" class="nav-item flex items-center p-3 rounded-lg transition-all bg-sagittarius-gold text-sagittarius-blue font-bold" data-module="dashboard">Dashboard</a>
-                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all" data-module="incident-report">Incident Report</a>
-                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all" data-module="guard-tracking">Guard Tracking</a>
-                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all" data-module="user-management">User Management</a>
-                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all" data-module="payroll">Payroll</a>
-                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all" data-module="system-logs">System Logs</a>
-                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all" data-module="settings">Settings</a>
+                <nav id="sidebarNav" class="space-y-1">
+                    <a href="#" class="nav-item flex items-center p-3 rounded-lg transition-all bg-sagittarius-gold text-sagittarius-blue font-bold" data-module="dashboard" data-perm="any">Dashboard</a>
+                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all text-sm" data-module="incident-report" data-perm="ops,guard">Incident Report</a>
+                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all text-sm" data-module="guard-tracking" data-perm="ops">Guard Tracking</a>
+                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all text-sm" data-module="user-management" data-perm="hr">Staff Directory</a>
+                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all text-sm" data-module="account-management" data-perm="admin">Account Management</a>
+                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all text-sm" data-module="payroll" data-perm="finance">Payroll</a>
+                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all text-sm" data-module="system-logs" data-perm="admin">System Logs</a>
+                    <a href="#" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/10 transition-all text-sm" data-module="settings" data-perm="admin">Settings</a>
                 </nav>
             </div>
-            <div class="mt-auto p-6 border-t border-white/10">
-                <p class="text-[10px] uppercase font-bold text-white/40 mb-2">Access Point</p>
-                <p id="userIdDisplay" class="text-xs truncate font-mono bg-black/20 p-2 rounded border border-white/5 mb-4">Local Admin</p>
+            <div class="mt-auto p-6 border-t border-white/10 flex-shrink-0 bg-sagittarius-blue">
+                <p class="text-[10px] uppercase font-bold text-white/40 mb-1">Access Point</p>
+                <p id="userIdDisplay" class="text-xs truncate font-mono bg-black/20 p-2 rounded border border-white/5 mb-1">...</p>
+                <p id="userRoleDisplay" class="text-[9px] uppercase font-black text-sagittarius-gold tracking-widest mb-4">Establishing Auth...</p>
                 <button id="logoutBtn" class="w-full text-sagittarius-gold font-bold py-2 rounded-lg border border-sagittarius-gold hover:bg-sagittarius-gold hover:text-sagittarius-blue transition-all">Log Out</button>
             </div>
         </aside>
 
         <!-- Main Workspace -->
         <main class="flex-1 p-6 md:p-10 relative overflow-y-auto bg-sagittarius-white/50">
-            <!-- Mobile Toggle -->
             <button id="menu-toggle" class="md:hidden fixed top-4 right-4 z-[60] bg-sagittarius-blue text-sagittarius-gold p-2 rounded-lg shadow-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16" /></svg>
             </button>
 
-            <!-- Brand Header -->
             <header class="mb-12 border-b-4 border-sagittarius-blue/10 pb-8">
                 <h1 id="mainCompanyNameDisplay" class="text-5xl md:text-6xl font-black text-sagittarius-blue tracking-tighter uppercase leading-none">DKB Anchor Security Services Ltd.</h1>
                 <div class="flex items-center space-x-4 mt-4">
@@ -117,9 +134,8 @@
             <!-- Dashboard -->
             <div id="dashboard" class="module space-y-8 transform transition-all duration-300">
                 <div class="flex justify-between items-end mb-4">
-                    <h2 class="text-2xl font-black text-sagittarius-blue/80 uppercase tracking-tight">Monthly Performance Overview</h2>
+                    <h2 class="text-2xl font-black text-sagittarius-blue/80 uppercase tracking-tight">Performance Overview</h2>
                     <div class="text-right">
-                        <p class="text-[10px] uppercase font-bold text-gray-400 mb-1">Internal Clock</p>
                         <p id="currentTimeDisplay" class="text-xl font-black font-mono text-sagittarius-blue">--:--:--</p>
                     </div>
                 </div>
@@ -136,15 +152,15 @@
                         <p class="text-[10px] uppercase font-black text-white/50 truncate">Guards</p>
                         <p id="totalGuardsMetric" class="text-2xl md:text-3xl font-black truncate">0</p>
                     </div>
-                    <div class="bg-sagittarius-blue text-white p-5 rounded-2xl shadow-xl border-b-4 border-sagittarius-gold overflow-hidden">
+                    <div class="financial-metric bg-sagittarius-blue text-white p-5 rounded-2xl shadow-xl border-b-4 border-sagittarius-gold overflow-hidden">
                         <p class="text-[10px] uppercase font-black text-white/50 truncate">Mo. Revenue</p>
                         <p id="totalRevenueMetric" class="text-xl md:text-2xl font-black truncate">₵0.00</p>
                     </div>
-                    <div class="bg-sagittarius-blue text-white p-5 rounded-2xl shadow-xl border-b-4 border-sagittarius-gold overflow-hidden">
+                    <div class="financial-metric bg-sagittarius-blue text-white p-5 rounded-2xl shadow-xl border-b-4 border-sagittarius-gold overflow-hidden">
                         <p class="text-[10px] uppercase font-black text-white/50 truncate">Mo. Salaries</p>
                         <p id="totalSalariesPaidMetric" class="text-xl md:text-2xl font-black truncate">₵0.00</p>
                     </div>
-                    <div class="bg-green-700 text-white p-5 rounded-2xl shadow-xl border-b-4 border-sagittarius-gold overflow-hidden">
+                    <div class="financial-metric bg-green-700 text-white p-5 rounded-2xl shadow-xl border-b-4 border-sagittarius-gold overflow-hidden">
                         <p class="text-[10px] uppercase font-black text-white/50 text-green-300 truncate">Mo. Profit</p>
                         <p id="totalProfitMetric" class="text-xl md:text-2xl font-black text-white truncate">₵0.00</p>
                     </div>
@@ -156,13 +172,26 @@
                         <canvas id="incidentChart" height="150"></canvas>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-lg border border-black/5">
-                        <h3 class="text-lg font-black mb-4 text-sagittarius-blue uppercase">Staff Growth</h3>
+                        <h3 class="text-lg font-black mb-4 text-sagittarius-blue uppercase">Staffing Dynamics</h3>
                         <canvas id="clientChart" height="150"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- Incident Report -->
+            <!-- Privilege/Accounts Module -->
+            <div id="account-management" class="module hidden space-y-6">
+                <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Privilege Controls</h2>
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-black/5">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead><tr><th>Staff Member</th><th>Username</th><th>Permissions</th><th>Status</th><th>Ops</th></tr></thead>
+                            <tbody id="accountsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incident Report Module -->
             <div id="incident-report" class="module hidden space-y-6">
                 <div class="flex justify-between items-center">
                     <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Incident Logs</h2>
@@ -171,58 +200,38 @@
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-black/5">
                     <div class="overflow-x-auto">
                         <table class="min-w-full incident-table">
-                            <thead><tr><th>Subject</th><th>Site</th><th>Officer</th><th>Time</th><th>Resolution</th><th>Ops</th></tr></thead>
+                            <thead><tr><th>Subject</th><th>Physical Site</th><th>Officer</th><th>Time Logged</th><th>Resolution</th><th>Operations</th></tr></thead>
                             <tbody id="incidentsList"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Guard Tracking -->
+            <!-- Guard Tracking Module -->
             <div id="guard-tracking" class="module hidden space-y-6">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                    <h2 class="text-3xl font-black text-sagittarius-blue uppercase leading-tight">Live Deployment Roster</h2>
-                    <div class="relative w-full sm:w-64">
-                        <input type="text" id="guardSearchInput" placeholder="Search guards or site..." class="w-full border rounded-lg p-2 pl-10 outline-none focus:ring-2 focus:ring-sagittarius-blue text-sm font-bold">
-                        <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </div>
-                </div>
+                <h2 class="text-3xl font-black text-sagittarius-blue uppercase leading-tight">Live Deployment Roster</h2>
+                <input type="text" id="guardSearchInput" placeholder="Search guards..." class="w-full sm:w-64 border rounded-lg p-2 text-sm font-bold mb-4 focus:ring-2 focus:ring-sagittarius-blue outline-none">
                 <div id="guardList" class="grid grid-cols-1 gap-4"></div>
             </div>
 
-            <!-- User Management -->
+            <!-- User Management Module -->
             <div id="user-management" class="module hidden space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Staff Directory</h2>
                     <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                        <div class="relative w-full sm:w-64">
-                            <input type="text" id="staffSearchInput" placeholder="Search name or Badge ID..." class="w-full border rounded-lg p-2 pl-10 outline-none focus:ring-2 focus:ring-sagittarius-blue text-sm font-bold">
-                            <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        </div>
+                        <input type="text" id="staffSearchInput" placeholder="Filter roster..." class="w-full sm:w-64 border rounded-lg p-2 outline-none focus:ring-2 focus:ring-sagittarius-blue text-sm font-bold">
                         <button id="openUserFormBtn" class="bg-sagittarius-gold text-sagittarius-blue font-black py-2 px-6 rounded-lg shadow hover:scale-105 transition-transform whitespace-nowrap">Hire Personnel</button>
                     </div>
                 </div>
-                <div id="usersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="usersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4"></div>
             </div>
 
-            <!-- Payroll -->
+            <!-- Payroll Module -->
             <div id="payroll" class="module hidden space-y-6">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-                    <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Payroll Intelligence</h2>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-black/5 flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-                        <div class="flex items-center gap-2">
-                            <label class="text-[10px] font-black uppercase text-gray-400">Period:</label>
-                            <select id="payrollMonth" class="border-none bg-gray-100 rounded-lg p-2 font-bold text-xs outline-none">
-                                <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
-                            </select>
-                            <select id="payrollYear" class="border-none bg-gray-100 rounded-lg p-2 font-bold text-xs outline-none"></select>
-                        </div>
-                        <div class="h-8 w-px bg-gray-200 hidden sm:block"></div>
-                        <div class="relative w-full sm:w-64">
-                            <input type="text" id="payrollSearchInput" placeholder="Filter view..." class="w-full border rounded-lg p-2 pl-10 outline-none focus:ring-2 focus:ring-sagittarius-blue text-xs font-bold">
-                            <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        </div>
-                    </div>
+                <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Payroll Intelligence</h2>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-black/5 flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto mb-4">
+                    <select id="payrollMonth" class="border rounded p-2 text-xs font-bold"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select>
+                    <select id="payrollYear" class="border rounded p-2 text-xs font-bold"></select>
                 </div>
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-black/5">
                     <div class="overflow-x-auto">
@@ -234,47 +243,27 @@
                 </div>
             </div>
 
-            <!-- System Logs -->
+            <!-- System Logs Module -->
             <div id="system-logs" class="module hidden space-y-8">
-                <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Audit & Intelligence</h2>
-                <div class="bg-white p-8 rounded-2xl shadow-xl border border-black/5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        <div>
-                            <label class="block text-xs font-black uppercase text-gray-400 mb-2">Month Context</label>
-                            <select id="reportMonth" class="w-full border rounded-lg p-3 font-bold bg-gray-50 outline-none"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-black uppercase text-gray-400 mb-2">Year Context</label>
-                            <select id="reportYear" class="w-full border rounded-lg p-3 font-bold bg-gray-50 outline-none"></select>
-                        </div>
-                    </div>
+                <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Audit Intelligence</h2>
+                <div class="bg-white p-8 rounded-2xl shadow-xl border border-black/5 mb-8">
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <button id="downloadIncidentsBtn" class="bg-sagittarius-blue text-white p-5 rounded-2xl font-bold flex flex-col items-center hover:shadow-xl transition-all"><span class="text-[10px] uppercase opacity-40 mb-1">CSV Export</span>Incidents</button>
-                        <button id="downloadUsersBtn" class="bg-sagittarius-blue text-white p-5 rounded-2xl font-bold flex flex-col items-center hover:shadow-xl transition-all"><span class="text-[10px] uppercase opacity-40 mb-1">CSV Export</span>Staff</button>
-                        <button id="downloadPayrollBtn" class="bg-sagittarius-blue text-white p-5 rounded-2xl font-bold flex flex-col items-center hover:shadow-xl transition-all"><span class="text-[10px] uppercase opacity-40 mb-1">CSV Export</span>Payroll</button>
-                        <button id="downloadLogsBtn" class="bg-sagittarius-blue text-white p-5 rounded-2xl font-bold flex flex-col items-center hover:shadow-xl transition-all"><span class="text-[10px] uppercase opacity-40 mb-1">CSV Export</span>Full Audit Trail</button>
+                        <button id="downloadIncidentsBtn" class="bg-sagittarius-blue text-white p-4 rounded-xl font-bold uppercase text-[10px]">Export Incidents</button>
+                        <button id="downloadUsersBtn" class="bg-sagittarius-blue text-white p-4 rounded-xl font-bold uppercase text-[10px]">Export Staff</button>
+                        <button id="downloadPayrollBtn" class="bg-sagittarius-blue text-white p-4 rounded-xl font-bold uppercase text-[10px]">Export Payroll</button>
+                        <button id="downloadLogsBtn" class="bg-sagittarius-blue text-white p-4 rounded-xl font-bold uppercase text-[10px]">Export Audit</button>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-xl border border-black/5">
-                    <h3 class="text-lg font-black text-sagittarius-blue uppercase mb-4">Live System Activity Feed</h3>
-                    <div id="logsList" class="p-6 bg-white rounded-2xl shadow-xl border border-black/5 font-mono text-[10px] max-h-[400px] overflow-y-auto space-y-1"></div>
-                </div>
+                <div id="logsList" class="p-6 bg-white rounded-2xl shadow-xl border border-black/5 font-mono text-[10px] max-h-[400px] overflow-y-auto space-y-1"></div>
             </div>
 
-            <!-- Settings -->
+            <!-- Settings Module -->
             <div id="settings" class="module hidden space-y-8">
-                <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Global Parameters</h2>
+                <h2 class="text-3xl font-black text-sagittarius-blue uppercase">Branding Control</h2>
                 <form id="companySettingsForm" class="bg-white p-8 rounded-2xl shadow-xl border border-black/5 space-y-6">
-                    <div><label class="block text-xs font-black uppercase text-gray-400 mb-2">Enterprise Name</label><input type="text" id="companyNameInput" class="w-full border rounded-lg p-3 font-bold focus:ring-2 focus:ring-sagittarius-blue outline-none"></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div><label class="block text-xs font-black uppercase text-gray-400 mb-2">Logo URL</label><input type="url" id="logoUrlInput" class="w-full border rounded-lg p-3 font-mono text-xs"></div>
-                        <div><label class="block text-xs font-black uppercase text-gray-400 mb-2">Favicon URL</label><input type="url" id="faviconUrlInput" class="w-full border rounded-lg p-3 font-mono text-xs"></div>
-                    </div>
-                    <div class="flex items-center space-x-4 p-5 bg-gray-50 rounded-xl border border-black/5">
-                        <input type="checkbox" id="darkModeToggle" class="w-6 h-6 rounded border-gray-300">
-                        <label class="font-black text-sm uppercase">Dark Interface Protocol</label>
-                    </div>
-                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-4 rounded-xl font-black uppercase shadow-xl hover:bg-opacity-90 active:scale-95 transition-all">Commit Global Parameters</button>
+                    <input type="text" id="companyNameInput" placeholder="Enterprise Name" class="w-full border rounded-lg p-3 font-bold focus:ring-2 focus:ring-sagittarius-blue outline-none">
+                    <input type="url" id="logoUrlInput" placeholder="Logo URL" class="w-full border rounded-lg p-3 font-mono text-xs">
+                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-4 rounded-xl font-black uppercase shadow-xl hover:bg-opacity-90">Commit branding</button>
                 </form>
             </div>
         </main>
@@ -287,26 +276,33 @@
             <h3 class="text-2xl font-black text-sagittarius-blue uppercase mb-8 flex items-center"><span class="w-2 h-8 bg-sagittarius-gold mr-3 rounded-full"></span>Staff Profile Definition</h3>
             <form id="userForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <input type="hidden" id="userIdHidden">
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Badge ID (Auto)</label><input type="text" id="employeeId" readonly class="w-full border p-3 rounded-xl outline-none bg-gray-50 font-bold text-sagittarius-blue"></div>
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">First Name</label><input type="text" id="firstName" required class="w-full border p-3 rounded-xl outline-none"></div>
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Last Name</label><input type="text" id="lastName" required class="w-full border p-3 rounded-xl outline-none"></div>
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Phone Number</label><input type="tel" id="phoneNumber" required class="w-full border p-3 rounded-xl outline-none"></div>
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">ID Type</label><select id="nationalIdType" class="w-full border p-3 rounded-xl"><option value="Ghana Card">Ghana Card</option><option value="Passport">Passport</option><option value="Driving Licence">Driving Licence</option></select></div>
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">ID Number</label><input type="text" id="idNumber" required class="w-full border p-3 rounded-xl outline-none"></div>
-                <div class="space-y-1">
-                    <label class="text-[10px] uppercase font-black text-gray-400 px-1">Role</label>
-                    <select id="userRole" required class="w-full border p-3 rounded-xl">
-                        <option value="Guard">Guard</option><option value="Supervisor">Supervisor</option><option value="Admin">Admin</option><option value="HR Manager">HR Manager</option><option value="Accountant">Accountant</option>
-                    </select>
-                </div>
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Duty Shift</label>
-                    <select id="userShift" required class="w-full border p-3 rounded-xl font-bold"><option value="Day">Day Duty</option><option value="Night">Night Duty</option></select>
-                </div>
-                <div class="space-y-1 md:col-span-2"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Assigned Site</label><input type="text" id="location" required class="w-full border p-3 rounded-xl outline-none"></div>
-                <div class="space-y-1 md:col-span-2"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Residential Address</label><textarea id="resAddress" required class="w-full border p-3 rounded-xl outline-none" rows="2"></textarea></div>
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">GPS Address</label><input type="text" id="gpsAddress" required placeholder="GA-123-4567" class="w-full border p-3 rounded-xl outline-none"></div>
-                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Enlistment Date</label><input type="date" id="employmentDate" required class="w-full border p-3 rounded-xl outline-none"></div>
-                <div class="md:col-span-2 flex justify-end space-x-3 pt-6 border-t mt-4">
+                
+                <div class="md:col-span-2 text-xs font-black uppercase text-sagittarius-blue/40 border-b pb-1 tracking-widest">Employee Personal Details</div>
+                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Badge ID</label><input type="text" id="employeeId" readonly class="w-full border p-3 rounded-xl bg-gray-50 font-bold text-sagittarius-blue outline-none"></div>
+                <input type="text" id="firstName" required placeholder="First Name" class="w-full border p-3 rounded-xl outline-none">
+                <input type="text" id="lastName" required placeholder="Last Name" class="w-full border p-3 rounded-xl outline-none">
+                <input type="tel" id="phoneNumber" required placeholder="Phone Number" class="w-full border p-3 rounded-xl outline-none">
+                <select id="nationalIdType" class="w-full border p-3 rounded-xl outline-none"><option value="Ghana Card">Ghana Card</option><option value="Passport">Passport</option></select>
+                <input type="text" id="idNumber" required placeholder="ID Number" class="w-full border p-3 rounded-xl outline-none">
+                <select id="userRole" required class="w-full border p-3 rounded-xl outline-none">
+                    <option value="Admin">Admin</option><option value="Supervisor">Supervisor</option><option value="Operations Manager">Operations Manager</option><option value="HR Manager">HR Manager</option><option value="Safety Manager">Safety Manager</option><option value="Account Manager">Account Manager</option><option value="Marketing Manager">Marketing Manager</option><option value="IT Manager">IT Manager</option><option value="Security Guard">Security Guard</option>
+                </select>
+                <select id="userShift" required class="w-full border p-3 rounded-xl font-bold outline-none"><option value="Day">Day Duty</option><option value="Night">Night Duty</option></select>
+                <input type="text" id="location" required placeholder="Assigned Site" class="w-full border p-3 rounded-xl outline-none">
+                <input type="text" id="gpsAddress" required placeholder="Digital GPS Address" class="w-full border p-3 rounded-xl outline-none">
+                <textarea id="resAddress" placeholder="Residential Address" class="w-full border p-3 rounded-xl outline-none md:col-span-2" rows="2"></textarea>
+                <input type="date" id="employmentDate" required class="w-full border p-3 rounded-xl outline-none">
+
+                <div class="md:col-span-2 text-xs font-black uppercase text-sagittarius-blue/40 border-b pb-1 tracking-widest mt-4">Guarantor Information</div>
+                <input type="text" id="guarantorFirstName" required placeholder="Guarantor First Name" class="w-full border p-3 rounded-xl outline-none">
+                <input type="text" id="guarantorLastName" required placeholder="Guarantor Last Name" class="w-full border p-3 rounded-xl outline-none">
+                <input type="tel" id="guarantorPhone" required placeholder="Guarantor Phone Number" class="w-full border p-3 rounded-xl outline-none">
+                <input type="text" id="guarantorOccupation" required placeholder="Guarantor Occupation" class="w-full border p-3 rounded-xl outline-none">
+                <input type="text" id="guarantorGps" required placeholder="Guarantor GPS Address" class="w-full border p-3 rounded-xl outline-none">
+                <input type="text" id="guarantorIdNumber" required placeholder="Guarantor National ID" class="w-full border p-3 rounded-xl outline-none">
+                <textarea id="guarantorAddress" required placeholder="Guarantor Residential Address" class="w-full border p-3 rounded-xl outline-none md:col-span-2" rows="2"></textarea>
+
+                <div class="md:col-span-2 flex justify-end pt-6 border-t mt-4">
                     <button type="button" id="closeUserFormBtn" class="px-8 py-3 rounded-xl font-bold text-gray-400">Cancel</button>
                     <button type="submit" class="bg-sagittarius-blue text-white px-10 py-3 rounded-xl font-black uppercase shadow-xl">Commit Personnel</button>
                 </div>
@@ -314,49 +310,75 @@
         </div>
     </div>
 
-    <!-- Edit Payroll Modal -->
-    <div id="editPayrollModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl border-t-8 border-sagittarius-blue">
-            <h3 class="text-2xl font-black text-sagittarius-blue uppercase mb-6 flex items-center"><span class="w-2 h-8 bg-sagittarius-gold mr-3 rounded-full"></span>Update Monthly Payroll</h3>
-            <form id="editPayrollForm" class="space-y-5">
-                <input type="hidden" id="editPayrollUserId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-gray-400 px-1">Revenue Contribution</label><input type="number" id="editRevenue" required class="w-full border p-3 rounded-xl outline-none focus:ring-2 focus:ring-sagittarius-blue"></div>
-                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-gray-400 px-1">Duty Days</label><input type="number" id="editDaysWorked" required class="w-full border p-3 rounded-xl outline-none focus:ring-2 focus:ring-sagittarius-blue"></div>
-                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-gray-400 px-1">Standard Gross (26d)</label><input type="number" id="editGrossSalary" readonly class="w-full border p-3 rounded-xl bg-gray-50 font-bold"></div>
-                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-gray-400 px-1">Overtime</label><input type="number" id="editOvertime" readonly class="w-full border p-3 rounded-xl bg-gray-50 font-bold"></div>
-                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-gray-400 px-1">Bonus</label><input type="number" id="editBonus" required class="w-full border p-3 rounded-xl outline-none focus:ring-2 focus:ring-sagittarius-blue"></div>
-                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-gray-400 px-1">Payment Status</label>
-                        <select id="editPaymentStatus" class="w-full border p-3 rounded-xl font-bold bg-gray-50 outline-none">
-                            <option value="Pending">Pending</option>
-                            <option value="Paid">Paid</option>
-                        </select>
-                    </div>
+    <!-- Provisioning Modal -->
+    <div id="accountFormModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border-t-8 border-sagittarius-blue max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-black text-sagittarius-blue uppercase mb-6 flex items-center"><span class="w-2 h-8 bg-sagittarius-gold mr-3 rounded-full"></span>Provision Access</h3>
+            <form id="accountForm" class="space-y-4">
+                <input type="hidden" id="accountStaffId">
+                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Personnel</label><input type="text" id="accountStaffName" readonly class="w-full border p-3 rounded-xl bg-gray-50 font-bold outline-none"></div>
+                <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Privilege Level</label>
+                    <select id="accountRole" required class="w-full border p-3 rounded-xl font-bold bg-sagittarius-white outline-none">
+                        <option value="admin">Super Admin (Admin, IT Manager)</option>
+                        <option value="hr">HR Manager (Personnel Control)</option>
+                        <option value="finance">Financial Control (Account & Marketing Mgt)</option>
+                        <option value="ops">Operational Control (Ops, Supervisor, Safety Mgt)</option>
+                        <option value="guard">Security Guard (Reporting Only)</option>
+                    </select>
                 </div>
+                <input type="text" id="accountUsername" required placeholder="Username" class="w-full border p-3 rounded-xl outline-none">
+                <input type="password" id="accountPassword" required placeholder="Password" class="w-full border p-3 rounded-xl outline-none focus:ring-2 focus:ring-sagittarius-blue">
                 <div class="flex justify-end pt-6 border-t mt-4">
-                    <button type="button" id="closeEditPayrollBtn" class="px-8 py-3 font-bold text-gray-400 hover:bg-gray-100 transition-all mr-3">Cancel</button>
-                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-3 rounded-xl font-black uppercase shadow-xl hover:bg-opacity-90 active:scale-95 transition-all">Authorize Entry</button>
+                    <button type="button" id="closeAccountFormBtn" class="px-8 py-3 rounded-xl font-bold text-gray-400 hover:bg-gray-100 transition-all mr-3">Cancel</button>
+                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-3 rounded-xl font-black uppercase shadow-xl hover:bg-opacity-90 active:scale-95 transition-all">Activate Account</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Incident Dossier Modal -->
+    <!-- Edit Payroll Modal -->
+    <div id="editPayrollModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl border-t-8 border-sagittarius-blue max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-black text-sagittarius-blue uppercase mb-6 flex items-center"><span class="w-2 h-8 bg-sagittarius-gold mr-3 rounded-full"></span>Monthly Dossier</h3>
+            <form id="editPayrollForm" class="space-y-5">
+                <input type="hidden" id="editPayrollUserId">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <input type="number" id="editRevenue" required placeholder="Revenue contribution" class="w-full border p-3 rounded-xl outline-none">
+                    <input type="number" id="editDaysWorked" required placeholder="Duty Days" class="w-full border p-3 rounded-xl outline-none">
+                    <input type="number" id="editGrossSalary" readonly placeholder="Standard Gross" class="w-full border p-3 rounded-xl bg-gray-50 font-bold outline-none">
+                    <input type="number" id="editOvertime" readonly placeholder="Overtime" class="w-full border p-3 rounded-xl bg-gray-50 font-bold outline-none">
+                    <input type="number" id="editBonus" required placeholder="Bonus" class="w-full border p-3 rounded-xl outline-none">
+                    <div class="space-y-1"><label class="text-[10px] uppercase font-black text-gray-400 px-1">Payment Status</label>
+                        <select id="editPaymentStatus" class="w-full border p-3 rounded-xl font-bold bg-gray-50 outline-none"><option value="Pending">Pending</option><option value="Paid">Paid</option></select>
+                    </div>
+                </div>
+                <div class="flex justify-end pt-6 border-t mt-4">
+                    <button type="button" id="closeEditPayrollBtn" class="px-8 py-3 font-bold text-gray-400 hover:bg-gray-100 transition-all mr-3">Cancel</button>
+                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-3 rounded-xl font-black uppercase shadow-xl">Authorize Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Incident Modal -->
     <div id="incidentFormModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl border-t-8 border-sagittarius-blue">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl border-t-8 border-sagittarius-blue max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-black text-sagittarius-blue uppercase mb-6 flex items-center"><span class="w-2 h-8 bg-sagittarius-gold mr-3 rounded-full"></span>Incident Dossier</h3>
             <form id="incidentForm" class="space-y-4">
                 <input type="hidden" id="incidentId">
                 <input type="text" id="incidentTitle" required placeholder="Subject / Title" class="w-full border p-3 rounded-xl outline-none">
-                <textarea id="incidentDescription" rows="4" required placeholder="Narrative..." class="w-full border p-3 rounded-xl outline-none"></textarea>
+                <textarea id="incidentDescription" rows="4" required placeholder="Full Narrative..." class="w-full border p-3 rounded-xl outline-none"></textarea>
                 <div class="grid grid-cols-2 gap-4">
                     <input type="text" id="incidentLocation" required placeholder="Site Location" class="w-full border p-3 rounded-xl outline-none">
                     <input type="text" id="incidentReporter" required placeholder="Reporting Officer" class="w-full border p-3 rounded-xl outline-none">
                 </div>
-                <div id="resolutionCommentField" class="hidden"><textarea id="resolutionComment" rows="2" placeholder="Management Resolution Protocol..." class="w-full border p-3 rounded-xl bg-yellow-50 outline-none"></textarea></div>
-                <div class="flex justify-end space-x-3 pt-4 border-t">
-                    <button type="button" id="closeIncidentFormBtn" class="px-8 py-3 font-bold text-gray-400">Cancel</button>
-                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-3 rounded-xl font-black uppercase shadow-xl">Commit Log</button>
+                <div id="resolutionCommentField" class="hidden space-y-1">
+                    <label class="block text-[10px] uppercase font-black text-sagittarius-blue px-1">Management Resolution Protocol</label>
+                    <textarea id="resolutionComment" rows="3" class="w-full border p-3 rounded-xl bg-yellow-50 outline-none border-sagittarius-gold/30" placeholder="Describe actions taken..."></textarea>
+                </div>
+                <div class="flex justify-end pt-4 border-t">
+                    <button type="button" id="closeIncidentFormBtn" class="px-8 py-3 font-bold text-gray-400 hover:bg-gray-100 transition-all mr-3">Cancel</button>
+                    <button type="submit" class="bg-sagittarius-blue text-white px-10 py-3 rounded-xl font-black uppercase active:scale-95 transition-all">Commit Dossier</button>
                 </div>
             </form>
         </div>
@@ -365,7 +387,7 @@
     <!-- Alert Modal -->
     <div id="alertModalContainer" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999] hidden backdrop-blur-sm">
         <div class="bg-white p-8 rounded-2xl shadow-2xl max-sm w-full border-4 border-sagittarius-gold">
-            <h3 id="alertModalTitle" class="text-xl font-black text-sagittarius-blue uppercase mb-2"></h3>
+            <h3 id="alertModalTitle" class="text-xl font-black text-sagittarius-blue uppercase mb-2 leading-tight"></h3>
             <p id="alertModalMessage" class="text-gray-500 mb-6 font-medium"></p>
             <div id="alertButtons" class="flex justify-end space-x-2">
                 <button id="alertModalCancel" class="bg-gray-400 text-white px-6 py-2 rounded-lg font-black uppercase text-sm hidden">Cancel</button>
@@ -374,39 +396,52 @@
         </div>
     </div>
 
-    <script>
-        // --- MANUAL BRANDING ENTRY ---
-        const MANUAL_LOGO_URL = "DKB Anchor Logo.png"; 
-        const MANUAL_FAVICON_URL = "DKB Anchor Logo.png"; 
+    <!-- Logic Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // --- CONSTANTS ---
-        const DB_NAME = 'sagittariusDB';
-        const DB_VERSION = 2; 
-        const STORES = ['incidents', 'managedUsers', 'guards', 'systemLogs', 'settings', 'payrollRecords'];
-        const STANDARD_DAYS = 26;
-        const ROLE_RATES = {
-            'Guard': 38.462, 'Supervisor': 76.93, 'Admin': 57.7,
-            'HR Manager': 173.08, 'Accountant': 173.08, 'Operations Manager': 173.08, 'Safety Manager': 173.08, 'Marketing Manager': 173.08
+        // --- GLOBAL CONFIG & STATE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAiK_Xj6D9c9-V0TkP-YPE99HyN_EsDwFg",
+            authDomain: "security-management-78370.firebaseapp.com",
+            projectId: "security-management-78370",
+            storageBucket: "security-management-78370.firebasestorage.app",
+            messagingSenderId: "102523747446",
+            appId: "1:102523747446:web:a3b7ebc58b1a09ec0eb357",
+            measurementId: "G-R11JDVH340"
         };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const ROLE_RATES = { 'Admin': 173.08, 'Supervisor': 76.93, 'Operations Manager': 173.08, 'HR Manager': 173.08, 'Safety Manager': 173.08, 'Account Manager': 173.08, 'Marketing Manager': 173.08, 'IT Manager': 173.08, 'Security Guard': 38.462 };
+        const STANDARD_DAYS = 26;
 
-        const getRateByRole = (role) => ROLE_RATES[role] || 38.462;
-
-        let db;
-        let allUsers = []; 
+        let currentUser = null;
+        let userPermissions = 'guest';
+        let allUsers = [];
         let allIncidents = [];
-        let allLogs = [];
         let allPayrollRecords = [];
-        let monthlyIncidentsChart;
-        let monthlyClientsChart;
+        let allAccounts = [];
+        let allLogs = [];
+        let settings = { companyName: 'DKB Anchor Security Services Ltd.', darkMode: false };
+        let monthlyIncidentsChart = null;
+        let monthlyClientsChart = null;
 
-        // --- CORE FUNCTIONS (Function Declarations for Hoisting) ---
-        function updateClock() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-            const el = document.getElementById('currentTimeDisplay');
-            if (el) el.innerText = timeString;
-        }
+        const usersCol = collection(db, 'artifacts', appId, 'public', 'data', 'managedUsers');
+        const incidentsCol = collection(db, 'artifacts', appId, 'public', 'data', 'incidents');
+        const logsCol = collection(db, 'artifacts', appId, 'public', 'data', 'systemLogs');
+        const payrollCol = collection(db, 'artifacts', appId, 'public', 'data', 'payrollRecords');
+        const accountsCol = collection(db, 'artifacts', appId, 'public', 'data', 'userAccounts');
+        const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
 
+        // --- HOISTED CORE UTILITY FUNCTIONS ---
+
+        function getRateByRole(role) { return ROLE_RATES[role] || 38.462; }
+        function getSelectedMonth() { const el = document.getElementById('payrollMonth'); return el ? parseInt(el.value) : 1; }
+        function getSelectedYear() { const el = document.getElementById('payrollYear'); return el ? parseInt(el.value) : 2025; }
         function getMonthLabels() {
             const labels = [];
             for (let i = 5; i >= 0; i--) {
@@ -415,93 +450,40 @@
             }
             return labels;
         }
-
-        async function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    STORES.forEach(storeName => {
-                        if (!db.objectStoreNames.contains(storeName)) {
-                            db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
-                        }
-                    });
-                };
-                request.onsuccess = (event) => { db = event.target.result; resolve(db); };
-                request.onerror = (event) => reject(event.target.error);
-            });
+        
+        async function logSystemActivity(activity, title) { 
+            if (!currentUser) return; 
+            const actor = document.getElementById('userIdDisplay')?.innerText || 'Admin'; 
+            try { await addDoc(logsCol, { timestamp: new Date().toISOString(), activity, title, actor }); } catch(e) {} 
         }
 
-        async function getDataFromStore(storeName) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readonly');
-                const store = transaction.objectStore(storeName);
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        async function putDataInStore(storeName, data) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readwrite');
-                const store = transaction.objectStore(storeName);
-                const request = store.put(data);
-                request.onsuccess = (e) => resolve(e.target.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        async function deleteDataFromStore(storeName, id) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readwrite');
-                const store = transaction.objectStore(storeName);
-                const request = store.delete(id);
-                request.onsuccess = () => resolve(true);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        function showModal(title, message, isConfirm = false) {
-            const modalContainer = document.getElementById('alertModalContainer');
-            document.getElementById('alertModalTitle').innerText = title;
-            document.getElementById('alertModalMessage').innerText = message;
-            const cancelBtn = document.getElementById('alertModalCancel');
-            const okBtn = document.getElementById('alertModalOk');
-            if (isConfirm) {
-                cancelBtn.classList.remove('hidden'); okBtn.innerText = "Confirm Action";
-                okBtn.classList.replace('bg-sagittarius-blue', 'bg-red-600');
-            } else {
-                cancelBtn.classList.add('hidden'); okBtn.innerText = "OK";
-                okBtn.classList.replace('bg-red-600', 'bg-sagittarius-blue');
-            }
-            modalContainer.classList.remove('hidden');
-            return new Promise(resolve => {
-                okBtn.onclick = () => { modalContainer.classList.add('hidden'); resolve(true); };
-                cancelBtn.onclick = () => { modalContainer.classList.add('hidden'); resolve(false); };
-            });
-        }
-
-        async function logSystemActivity(activity, title) {
-            const actorEl = document.getElementById('userIdDisplay');
-            const actor = actorEl ? actorEl.innerText : 'Admin';
-            const logEntry = { timestamp: new Date().toISOString(), activity, title, actor: actor };
+        function playNotificationSound() {
             try {
-                await putDataInStore('systemLogs', logEntry);
-                await refreshUI();
-            } catch (e) { console.error("Log fail:", e); }
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const alarmDuration = 5000;
+                const interval = setInterval(() => {
+                    const osc = context.createOscillator();
+                    const g = context.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, context.currentTime);
+                    g.gain.setValueAtTime(0, context.currentTime);
+                    g.gain.linearRampToValueAtTime(0.4, context.currentTime + 0.05);
+                    g.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.4);
+                    osc.connect(g); g.connect(context.destination);
+                    osc.start(); osc.stop(context.currentTime + 0.5);
+                }, 600);
+                setTimeout(() => clearInterval(interval), alarmDuration);
+            } catch(e) {}
         }
 
-        function downloadCSV(csvContent, fileName) {
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", fileName);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function showToast(title, message) {
+            const container = document.getElementById('toastContainer');
+            if(!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'bg-sagittarius-blue text-white p-4 rounded-xl shadow-2xl border-l-8 border-sagittarius-gold animate-notification pointer-events-auto';
+            toast.innerHTML = `<p class="text-[10px] font-black uppercase text-sagittarius-gold mb-1">System Intelligence</p><p class="text-sm font-bold">${title}</p><p class="text-xs opacity-80">${message}</p>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; toast.style.transition = 'all 0.3s ease-in'; setTimeout(() => toast.remove(), 300); }, 5000);
         }
 
         function generateNextBadgeId(users) {
@@ -510,73 +492,81 @@
                 const match = (u.employeeId || "").match(/DKB-GH-(\d+)/);
                 return match ? parseInt(match[1], 10) : 0;
             }).filter(n => !isNaN(n));
-            const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
-            const nextId = maxId + 1;
-            return `DKB-GH-${nextId.toString().padStart(4, '0')}`;
+            const maxId = Math.max(...numericIds, 0);
+            return `DKB-GH-${(maxId + 1).toString().padStart(4, '0')}`;
         }
 
-        function getSelectedMonth() { return parseInt(document.getElementById('payrollMonth').value); }
-        function getSelectedYear() { return parseInt(document.getElementById('payrollYear').value); }
+        function filterNavByRole() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const perms = item.dataset.perm.split(',');
+                if (perms.includes('any') || userPermissions === 'admin' || perms.includes(userPermissions)) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+            // Financial cards dashboard hiding
+            const financialMetrics = document.querySelectorAll('.financial-metric');
+            financialMetrics.forEach(el => {
+                if (userPermissions === 'guard') el.classList.add('hidden');
+                else el.classList.remove('hidden');
+            });
+        }
+
+        function showModalDialog(title, message, isConfirm = false) {
+            const container = document.getElementById('alertModalContainer');
+            if(!container) return;
+            document.getElementById('alertModalTitle').innerText = title;
+            document.getElementById('alertModalMessage').innerText = message;
+            const okBtn = document.getElementById('alertModalOk');
+            const cancelBtn = document.getElementById('alertModalCancel');
+            if (isConfirm) { 
+                cancelBtn?.classList.remove('hidden'); 
+                if(okBtn) okBtn.innerText = "Confirm"; 
+                okBtn?.classList.replace('bg-sagittarius-blue', 'bg-red-600'); 
+            } else { 
+                cancelBtn?.classList.add('hidden'); 
+                if(okBtn) okBtn.innerText = "OK"; 
+                okBtn?.classList.replace('bg-red-600', 'bg-sagittarius-blue'); 
+            }
+            container.classList.remove('hidden');
+            return new Promise(resolve => {
+                if(okBtn) okBtn.onclick = () => { container.classList.add('hidden'); resolve(true); };
+                if(cancelBtn) cancelBtn.onclick = () => { container.classList.add('hidden'); resolve(false); };
+            });
+        }
 
         function updateEditCalculations() {
             const uidInput = document.getElementById('editPayrollUserId');
             if(!uidInput || !uidInput.value) return;
-            const uid = parseInt(uidInput.value);
-            const user = allUsers.find(u => u.id === uid);
-            if(!user) return;
-            const rate = getRateByRole(user.role);
-            const daysWorked = parseInt(document.getElementById('editDaysWorked').value) || 0;
-            const bonus = parseFloat(document.getElementById('editBonus').value) || 0;
-            const grossDays = Math.min(daysWorked, STANDARD_DAYS);
-            const extraDays = Math.max(0, daysWorked - STANDARD_DAYS);
-            const grossStandard = grossDays * rate;
-            const overtime = extraDays * rate;
-            const totalGross = grossStandard + overtime + bonus;
-            const tax = totalGross * 0.15;
-            document.getElementById('editGrossSalary').value = grossStandard.toFixed(2);
-            document.getElementById('editOvertime').value = overtime.toFixed(2);
+            const staff = allUsers.find(u => u.id === uidInput.value);
+            if(!staff) return;
+            const rate = getRateByRole(staff.role);
+            const daysWorked = parseInt(document.getElementById('editDaysWorked')?.value) || 0;
+            const bonus = parseFloat(document.getElementById('editBonus')?.value) || 0;
+            const grossStandard = Math.min(daysWorked, STANDARD_DAYS) * rate;
+            const overtime = Math.max(0, daysWorked - STANDARD_DAYS) * rate;
+            const grossEl = document.getElementById('editGrossSalary'); if(grossEl) grossEl.value = grossStandard.toFixed(2);
+            const otEl = document.getElementById('editOvertime'); if(otEl) otEl.value = overtime.toFixed(2);
         }
 
-        async function refreshUI() {
-            try {
-                allIncidents = await getDataFromStore('incidents');
-                allUsers = await getDataFromStore('managedUsers');
-                allLogs = await getDataFromStore('systemLogs');
-                allPayrollRecords = await getDataFromStore('payrollRecords');
-                renderIncidents(allIncidents);
-                renderUsers(allUsers);
-                renderGuards(); renderPayroll(); renderDashboardMetrics(); renderCharts(); renderLogs(allLogs);
-                const settingsList = await getDataFromStore('settings');
-                const currentSettings = settingsList.find(s => s.id === 1) || { companyName: 'DKB Anchor Security Services Ltd.', darkMode: false };
-                document.getElementById('mainCompanyNameDisplay').innerText = currentSettings.companyName;
-                document.getElementById('companyNameInput').value = currentSettings.companyName;
-                const customLogo = document.getElementById('customLogo');
-                const defaultLogo = document.getElementById('defaultLogo');
-                const activeLogo = MANUAL_LOGO_URL || currentSettings.logoUrl;
-                if (activeLogo) { customLogo.src = activeLogo; customLogo.classList.remove('hidden'); defaultLogo.classList.add('hidden'); }
-                else { customLogo.classList.add('hidden'); defaultLogo.classList.remove('hidden'); }
-                if (MANUAL_FAVICON_URL || currentSettings.faviconUrl) document.getElementById('faviconTag').href = MANUAL_FAVICON_URL || currentSettings.faviconUrl;
-                document.body.classList.toggle('dark', currentSettings.darkMode);
-            } catch (e) { console.error("Refresh Error:", e); }
-        }
-
+        // --- RENDERING HANDLERS ---
         function renderDashboardMetrics() {
-            const now = new Date(), curMonth = now.getMonth() + 1, curYear = now.getFullYear();
-            const curRecords = allPayrollRecords.filter(r => r.month === curMonth && r.year === curYear);
-            const revenue = curRecords.reduce((s, r) => s + (r.revenue||0), 0);
-            const salaries = curRecords.reduce((s, r) => {
-                const user = allUsers.find(u => u.id === r.userId);
-                const rate = getRateByRole(user ? user.role : 'Guard');
-                const totalGross = (r.daysWorked || 0) * rate + (r.bonus || 0);
+            const nowTime = new Date(), m = nowTime.getMonth() + 1, y = nowTime.getFullYear();
+            const curRecs = allPayrollRecords.filter(r => r.month === m && r.year === y);
+            const rev = curRecs.reduce((s, r) => s + (r.revenue||0), 0);
+            const sals = curRecs.reduce((s, r) => {
+                const staff = allUsers.find(u => u.id === r.userId);
+                const totalGross = (r.daysWorked || 0) * getRateByRole(staff?.role) + (r.bonus || 0);
                 return s + (totalGross * 0.85); 
             }, 0);
-            const profit = revenue - salaries;
-            document.getElementById('totalIncidentsMetric').innerText = allIncidents.length;
-            document.getElementById('totalUsersMetric').innerText = allUsers.length;
-            document.getElementById('totalGuardsMetric').innerText = allUsers.filter(u => u.role === 'Guard').length;
-            document.getElementById('totalRevenueMetric').innerText = "₵" + revenue.toLocaleString();
-            document.getElementById('totalSalariesPaidMetric').innerText = "₵" + salaries.toLocaleString();
-            document.getElementById('totalProfitMetric').innerText = "₵" + profit.toLocaleString();
+            const updateField = (id, text) => { const el = document.getElementById(id); if(el) el.innerText = text; };
+            updateField('totalIncidentsMetric', allIncidents.length);
+            updateField('totalUsersMetric', allUsers.length);
+            updateField('totalGuardsMetric', allUsers.filter(u => u.role === 'Security Guard').length);
+            updateField('totalRevenueMetric', "₵" + rev.toLocaleString());
+            updateField('totalSalariesPaidMetric', "₵" + sals.toLocaleString());
+            updateField('totalProfitMetric', "₵" + (rev - sals).toLocaleString());
         }
 
         function renderIncidents(list) {
@@ -584,21 +574,10 @@
             if(!tbody) return; tbody.innerHTML = '';
             list.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach(i => {
                 const tr = document.createElement('tr');
-                const statusColor = i.status === 'Open' ? 'bg-blue-500' : i.status === 'In Progress' ? 'bg-yellow-500' : 'bg-green-600';
-                tr.innerHTML = `<td><b class="uppercase text-xs">${i.title}</b></td><td>${i.location}</td><td>${i.reporter}</td><td>${new Date(i.timestamp).toLocaleString()}</td><td>${i.resolutionComment || 'N/A'}</td><td class="flex space-x-2"><button onclick="window.handleStatusToggle(${i.id},'${i.status}')" class="px-2 py-1 rounded text-[10px] text-white font-bold uppercase ${statusColor}">${i.status}</button><button onclick="window.handleEditIncident(${i.id})" class="text-sagittarius-blue font-bold text-xs uppercase">Edit</button><button onclick="window.handleDeleteIncident(${i.id})" class="text-red-600 font-bold text-xs uppercase">Delete</button></td>`;
+                const sc = i.status === 'Open' ? 'bg-blue-500' : i.status === 'In Progress' ? 'bg-yellow-500' : 'bg-green-600';
+                tr.innerHTML = `<td><b class="uppercase text-xs">${i.title}</b></td><td>${i.location}</td><td>${i.reporter}</td><td>${new Date(i.timestamp).toLocaleString()}</td><td>${i.resolutionComment || 'N/A'}</td>
+                <td class="flex space-x-2"><button class="status-btn px-2 py-1 rounded text-[10px] text-white font-bold uppercase ${sc}" data-id="${i.id}" data-status="${i.status}">${i.status}</button><button class="update-incident bg-sagittarius-gold text-sagittarius-blue px-2 py-1 rounded text-[10px] font-black uppercase" data-id="${i.id}">Update</button><button class="delete-incident text-red-600 font-bold text-xs uppercase" data-id="${i.id}">Delete</button></td>`;
                 tbody.appendChild(tr);
-            });
-        }
-
-        function renderGuards() {
-            const container = document.getElementById('guardList');
-            if(!container) return; container.innerHTML = '';
-            const guards = allUsers.filter(u => u.role === 'Guard');
-            guards.forEach(g => {
-                const div = document.createElement('div');
-                div.className = 'p-5 bg-white rounded-2xl shadow-sm border-l-8 border-sagittarius-gold border flex flex-col sm:flex-row justify-between items-center hover:shadow-md transition-all';
-                div.innerHTML = `<div class="flex items-center space-x-4"><div class="w-10 h-10 bg-sagittarius-blue text-white rounded-full flex items-center justify-center font-black uppercase text-xs">${g.firstName[0]}${g.lastName[0]}</div><div><p class="font-black text-sagittarius-blue uppercase">${g.firstName} ${g.lastName}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${g.employeeId}</p></div></div><div class="flex flex-col sm:flex-row gap-4 sm:gap-10 text-center"><div><p class="text-[9px] uppercase font-black text-gray-400">Assigned Site</p><p class="text-xs font-bold text-sagittarius-blue uppercase">${g.location} (${g.shift || 'Day'})</p></div><div><p class="text-[9px] uppercase font-black text-gray-400">Phone</p><a href="tel:${g.phoneNumber}" class="text-xs font-black text-sagittarius-blue underline">${g.phoneNumber}</a></div></div>`;
-                container.appendChild(div);
             });
         }
 
@@ -608,244 +587,356 @@
             list.forEach(u => {
                 const div = document.createElement('div');
                 div.className = 'p-5 bg-white rounded-2xl shadow-sm border border-black/5 flex justify-between items-center';
-                div.innerHTML = `<div><p class="font-black text-sagittarius-blue uppercase">${u.firstName} ${u.lastName}</p><p class="text-[10px] text-gray-400 font-bold">${u.role} • ${u.location} (${u.shift || 'Day'})</p></div><div class="flex space-x-2"><button onclick="window.handleEditUser(${u.id})" class="text-sagittarius-blue font-black uppercase text-[10px]">Edit</button><button onclick="window.handleDeleteUser(${u.id})" class="text-red-600 font-black uppercase text-[10px]">Delete</button></div>`;
+                div.innerHTML = `<div><p class="font-black text-sagittarius-blue uppercase leading-tight">${u.firstName} ${u.lastName}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${u.employeeId} • ${u.role}</p></div><div class="flex space-x-2"><button class="edit-user text-sagittarius-blue font-black uppercase text-[10px]" data-id="${u.id}">Edit</button><button class="delete-user text-red-600 font-black uppercase text-[10px]" data-id="${u.id}">Delete</button></div>`;
                 container.appendChild(div);
             });
         }
 
-        function renderPayroll(filteredUsers = null) {
+        function renderPayroll() {
             const tbody = document.getElementById('payrollList');
             if(!tbody) return; tbody.innerHTML = '';
             const m = getSelectedMonth(), y = getSelectedYear();
-            const usersToRender = filteredUsers || allUsers;
-            usersToRender.forEach(u => {
+            allUsers.forEach(u => {
                 const rec = allPayrollRecords.find(r => r.userId === u.id && r.month === m && r.year === y) || { daysWorked: 0, bonus: 0, paymentStatus: 'Pending' };
                 const r = getRateByRole(u.role);
                 const gross = Math.min(rec.daysWorked, 26) * r + Math.max(0, rec.daysWorked-26)*r + rec.bonus;
-                const statusColor = rec.paymentStatus === 'Paid' ? 'text-green-600' : 'text-yellow-600';
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td><span class="font-mono text-xs">${u.employeeId}</span></td><td class="font-bold">${u.firstName}</td><td>${rec.daysWorked}</td><td>₵${gross.toFixed(2)}</td><td>₵${(Math.max(0, rec.daysWorked-26)*r).toFixed(2)}</td><td>₵${rec.bonus}</td><td class="text-red-500">₵${(gross*0.15).toFixed(2)}</td><td class="font-black">₵${(gross*0.85).toFixed(2)}</td><td><button onclick="window.handlePayStatusToggle(${u.id},'${rec.paymentStatus}')" class="font-black uppercase text-[10px] hover:underline cursor-pointer ${statusColor}">${rec.paymentStatus}</button></td><td><button onclick="window.handleEditPayroll(${u.id})" class="bg-sagittarius-blue text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase">Edit</button></td>`;
+                tr.innerHTML = `<td><span class="font-mono text-xs">${u.employeeId}</span></td><td class="font-bold">${u.firstName}</td><td>${rec.daysWorked}</td><td>₵${gross.toFixed(2)}</td><td>₵${(Math.max(0, rec.daysWorked-26)*r).toFixed(2)}</td><td>₵${rec.bonus}</td><td class="text-red-500">₵${(gross*0.15).toFixed(2)}</td><td class="font-black">₵${(gross*0.85).toFixed(2)}</td><td><span class="font-black uppercase text-[10px] ${rec.paymentStatus==='Paid'?'text-green-600':'text-yellow-600'}">${rec.paymentStatus}</span></td><td><button class="edit-payroll bg-sagittarius-blue text-white px-3 py-1 rounded text-[10px] font-black uppercase" data-id="${u.id}">Edit</button></td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        function renderCharts() {
-            const labels = getMonthLabels();
-            const incidentCtx = document.getElementById('incidentChart')?.getContext('2d');
-            if(incidentCtx) {
-                if(monthlyIncidentsChart) monthlyIncidentsChart.destroy();
-                const counts = labels.map(l => allIncidents.filter(i => new Date(i.timestamp).toLocaleString('default',{month:'short', year:'numeric'}) === l).length);
-                monthlyIncidentsChart = new Chart(incidentCtx, { type: 'line', data: { labels, datasets: [{ label: 'Incidents', data: counts, borderColor: '#0A2351', tension: 0.4 }] } });
-            }
-            const clientCtx = document.getElementById('clientChart')?.getContext('2d');
-            if(clientCtx) {
-                if(monthlyClientsChart) monthlyClientsChart.destroy();
-                const growth = labels.map(l => allUsers.filter(u => new Date(u.createdAt).toLocaleString('default',{month:'short', year:'numeric'}) === l).length);
-                monthlyClientsChart = new Chart(clientCtx, { type: 'bar', data: { labels, datasets: [{ label: 'Staffing', data: growth, backgroundColor: '#FFD700' }] } });
-            }
+        function renderAccounts() {
+            const tbody = document.getElementById('accountsList');
+            if(!tbody) return; tbody.innerHTML = '';
+            allUsers.forEach(u => {
+                const acc = allAccounts.find(a => a.userId === u.id);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><b class="uppercase text-xs">${u.firstName} ${u.lastName}</b></td><td>${acc ? acc.username : '-'}</td><td><span class="text-[9px] font-black uppercase px-2 py-1 rounded bg-gray-100">${acc ? acc.role : 'None'}</span></td><td><span class="${acc ? 'text-green-600' : 'text-yellow-600'} text-[10px] font-black uppercase">${acc ? 'Active' : 'Pending'}</span></td><td><button class="manage-account bg-sagittarius-blue text-white px-3 py-1 rounded text-[10px] font-black uppercase" data-id="${u.id}" data-name="${u.firstName} ${u.lastName}">Manage</button></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderGuards() {
+            const container = document.getElementById('guardList');
+            if(!container) return; container.innerHTML = '';
+            const guards = allUsers.filter(u => u.role === 'Security Guard');
+            guards.forEach(g => {
+                const div = document.createElement('div');
+                div.className = 'p-4 bg-white rounded-xl shadow-sm border flex justify-between items-center';
+                div.innerHTML = `<div><p class="font-black text-sagittarius-blue uppercase leading-tight">${g.firstName} ${g.lastName}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${g.employeeId} • ${g.location}</p></div><a href="tel:${g.phoneNumber}" class="text-xs font-black text-sagittarius-blue underline">${g.phoneNumber}</a>`;
+                container.appendChild(div);
+            });
         }
 
         function renderLogs(list) {
             const container = document.getElementById('logsList');
             if(!container) return; container.innerHTML = '';
-            [...list].reverse().slice(0,100).forEach(l => {
+            [...list].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0,100).forEach(l => {
                 const div = document.createElement('div');
-                div.innerHTML = `<span class="opacity-30">[${new Date(l.timestamp).toLocaleTimeString()}]</span> <span class="font-bold text-blue-500 uppercase">${l.actor}</span> - <span class="text-gray-400 italic uppercase text-[9px] font-black">${l.title}</span>: ${l.activity}`;
+                div.innerHTML = `<span class="opacity-30 text-[8px]">[${new Date(l.timestamp).toLocaleString()}]</span> <span class="font-bold text-blue-500 uppercase">${l.actor}</span>: ${l.activity}`;
                 container.appendChild(div);
             });
         }
 
-        // --- HANDLERS ---
-        window.handlePayStatusToggle = async (userId, current) => {
-            const month = getSelectedMonth(), year = getSelectedYear(), next = current === 'Paid' ? 'Pending' : 'Paid';
-            let rec = allPayrollRecords.find(r => r.userId === userId && r.month === month && r.year === year);
-            if(!rec) rec = { userId, month, year, daysWorked: 0, bonus: 0, revenue: 0, paymentStatus: next };
-            else rec.paymentStatus = next;
-            await putDataInStore('payrollRecords', rec);
-            const user = allUsers.find(u => u.id === userId);
-            await logSystemActivity(`Authorized quick status toggle: ${user.firstName} is now ${next} for ${month}/${year}`, "Audit: Finance");
-        };
+        function renderCharts() {
+            const labels = getMonthLabels();
+            const incCtx = document.getElementById('incidentChart')?.getContext('2d');
+            if(incCtx) {
+                const counts = labels.map(l => allIncidents.filter(i => new Date(i.timestamp).toLocaleString('default',{month:'short', year:'numeric'}) === l).length);
+                if(monthlyIncidentsChart) monthlyIncidentsChart.destroy();
+                monthlyIncidentsChart = new Chart(incCtx, { type: 'line', data: { labels, datasets: [{ label: 'Incidents', data: counts, borderColor: '#0A2351', tension: 0.4 }] } });
+            }
+            const cliCtx = document.getElementById('clientChart')?.getContext('2d');
+            if(cliCtx) {
+                const growth = labels.map(l => allUsers.filter(u => new Date(u.employmentDate).toLocaleString('default',{month:'short', year:'numeric'}) === l).length);
+                if(monthlyClientsChart) monthlyClientsChart.destroy();
+                monthlyClientsChart = new Chart(cliCtx, { type: 'bar', data: { labels, datasets: [{ label: 'Staffing', data: growth, backgroundColor: '#FFD700' }] } });
+            }
+        }
 
-        window.handleStatusToggle = async (id, current) => {
-            const states = ['Open', 'In Progress', 'Closed'], next = states[(states.indexOf(current) + 1) % states.length];
-            const i = allIncidents.find(inc => inc.id === id);
-            if(i) { i.status = next; await putDataInStore('incidents', i); await logSystemActivity(`Status updated to ${next} for ${i.title}`, "Ops Update"); }
-        };
+        function setupRealtimeListeners() {
+            let isInitialIncidents = true; let isInitialUsers = true;
+            onSnapshot(usersCol, s => { 
+                s.docChanges().forEach(change => { if (change.type === 'added' && !isInitialUsers) { const d = change.doc.data(); showToast("Staff Enlisted", `${d.firstName} ${d.lastName}`); playNotificationSound(); } });
+                allUsers = s.docs.map(d => ({id:d.id, ...d.data()})); 
+                renderUsers(allUsers); renderGuards(); renderPayroll(); renderAccounts(); renderDashboardMetrics(); renderCharts();
+                isInitialUsers = false;
+            }, (err) => console.error("Snapshot error Users", err));
 
-        window.handleEditIncident = (id) => {
-            const i = allIncidents.find(inc => inc.id === id);
-            if(!i) return;
-            document.getElementById('incidentId').value = i.id;
-            document.getElementById('incidentTitle').value = i.title;
-            document.getElementById('incidentDescription').value = i.description;
-            document.getElementById('incidentLocation').value = i.location;
-            document.getElementById('incidentReporter').value = i.reporter;
-            document.getElementById('resolutionComment').value = i.resolutionComment || '';
-            document.getElementById('resolutionCommentField').classList.remove('hidden');
-            document.getElementById('incidentFormModal').classList.remove('hidden');
-        };
+            onSnapshot(incidentsCol, s => { 
+                s.docChanges().forEach(change => { if (change.type === 'added' && !isInitialIncidents) { const d = change.doc.data(); showToast("New Incident Alert", d.title); playNotificationSound(); } });
+                allIncidents = s.docs.map(d => ({id:d.id, ...d.data()})); 
+                renderIncidents(allIncidents); renderDashboardMetrics(); renderCharts();
+                isInitialIncidents = false;
+            }, (err) => console.error("Snapshot error Incidents", err));
 
-        window.handleDeleteIncident = async (id) => {
-            const i = allIncidents.find(inc => inc.id === id);
-            if(!i) return;
-            const confirmed = await showModal("Authorization", `Delete incident dossier: "${i.title}"?`, true);
-            if(confirmed) { await deleteDataFromStore('incidents', id); await logSystemActivity(`Deleted incident: ${i.title}`, "Clean-up"); }
-        };
+            onSnapshot(logsCol, s => { allLogs = s.docs.map(d => ({id:d.id, ...d.data()})); renderLogs(allLogs); }, (err) => console.error("Snapshot error Logs", err));
+            onSnapshot(payrollCol, s => { allPayrollRecords = s.docs.map(d => ({id:d.id, ...d.data()})); renderPayroll(); renderDashboardMetrics(); }, (err) => console.error("Snapshot error Payroll", err));
+            onSnapshot(accountsCol, s => { allAccounts = s.docs.map(d => ({id:d.id, ...d.data()})); renderAccounts(); }, (err) => console.error("Snapshot error Accounts", err));
+            onSnapshot(settingsDocRef, s => { if(s.exists()) { settings = s.data(); applyBranding(); } }, (err) => console.error("Snapshot error Settings", err));
+        }
 
-        window.handleEditUser = (id) => {
-            const u = allUsers.find(user => user.id === id);
-            if(!u) return;
-            document.getElementById('userIdHidden').value = u.id;
-            document.getElementById('employeeId').value = u.employeeId;
-            document.getElementById('firstName').value = u.firstName;
-            document.getElementById('lastName').value = u.lastName;
-            document.getElementById('phoneNumber').value = u.phoneNumber;
-            document.getElementById('nationalIdType').value = u.nationalIdType || 'Ghana Card';
-            document.getElementById('idNumber').value = u.idNumber || '';
-            document.getElementById('userRole').value = u.role;
-            document.getElementById('userShift').value = u.shift || 'Day';
-            document.getElementById('location').value = u.location;
-            document.getElementById('resAddress').value = u.resAddress || '';
-            document.getElementById('gpsAddress').value = u.gpsAddress || '';
-            document.getElementById('employmentDate').value = u.employmentDate || '';
-            document.getElementById('userFormModal').classList.remove('hidden');
-        };
+        function applyBrandingUI() {
+            applyBranding();
+        }
 
-        window.handleDeleteUser = async (id) => {
-            const user = allUsers.find(u => u.id === id);
-            if(!user) return;
-            const confirmed = await showModal("Verify Termination", `Permanently terminate ${user.firstName}?`, true);
-            if (confirmed) { await deleteDataFromStore('managedUsers', id); await logSystemActivity(`Terminated staff: ${user.firstName}`, "HR Action"); }
-        };
+        function downloadCSV(csvContent, fileName) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url); link.setAttribute("download", fileName);
+            link.style.visibility = 'hidden'; document.body.appendChild(link);
+            link.click(); document.body.removeChild(link);
+        }
 
-        window.handleEditPayroll = (userId) => {
-            const u = allUsers.find(user => user.id === userId);
-            const m = getSelectedMonth(), y = getSelectedYear();
-            const rec = allPayrollRecords.find(r => r.userId === userId && r.month === m && r.year === y) || { revenue: 0, daysWorked: 0, bonus: 0, paymentStatus: 'Pending' };
-            document.getElementById('editPayrollUserId').value = userId;
-            document.getElementById('editRevenue').value = rec.revenue;
-            document.getElementById('editDaysWorked').value = rec.daysWorked;
-            document.getElementById('editBonus').value = rec.bonus;
-            document.getElementById('editPaymentStatus').value = rec.paymentStatus;
-            updateEditCalculations();
-            document.getElementById('editPayrollModal').classList.remove('hidden');
-        };
+        function downloadCSVHandler(type) {
+            const escapeCSV = (val) => `"${(val || "").toString().replace(/"/g, '""')}"`;
+            if(type === 'incidents') {
+                let csv = "Subject,Site,Officer,Time,Status,Resolution\n";
+                allIncidents.forEach(i => csv += `${escapeCSV(i.title)},${escapeCSV(i.location)},${escapeCSV(i.reporter)},${escapeCSV(i.timestamp)},${escapeCSV(i.status)},${escapeCSV(i.resolutionComment)}\n`);
+                downloadCSV(csv, "Incidents_Export.csv"); logSystemActivity("Exported Incident Logs", "Data Export");
+            } else if(type === 'staff') {
+                let csv = "Badge,First,Last,Role,Shift,Site,ResAddress,GPS,Date,GuarantorName,GuarantorPhone,GuarantorOccupation,GuarantorGPS,GuarantorID,GuarantorAddress\n";
+                allUsers.forEach(u => csv += `${escapeCSV(u.employeeId)},${escapeCSV(u.firstName)},${escapeCSV(u.lastName)},${escapeCSV(u.role)},${escapeCSV(u.shift)},${escapeCSV(u.location)},${escapeCSV(u.resAddress)},${escapeCSV(u.gpsAddress)},${escapeCSV(u.employmentDate)},${escapeCSV((u.guarantorFirstName||'')+' '+(u.guarantorLastName||''))},${escapeCSV(u.guarantorPhone)},${escapeCSV(u.guarantorOccupation)},${escapeCSV(u.guarantorGps)},${escapeCSV(u.guarantorIdNumber)},${escapeCSV(u.guarantorAddress)}\n`);
+                downloadCSV(csv, "Staff_Directory.csv"); logSystemActivity("Exported Staff List", "Data Export");
+            } else if(type === 'payroll') {
+                const m = getSelectedMonth(), y = getSelectedYear();
+                let csv = `Period: ${m}/${y}\nID,Name,Days,Gross,Tax(15%),Net,Status\n`;
+                allUsers.forEach(u => {
+                    const rec = allPayrollRecords.find(r => r.userId === u.id && r.month === m && r.year === y) || {daysWorked:0, bonus:0, paymentStatus:'Pending'};
+                    const r = getRateByRole(u.role);
+                    const gross = Math.min(rec.daysWorked, 26) * r + rec.bonus;
+                    csv += `${escapeCSV(u.employeeId)},${escapeCSV(u.firstName)},${rec.daysWorked},${gross.toFixed(2)},${(gross*0.15).toFixed(2)},${(gross*0.85).toFixed(2)},${escapeCSV(rec.paymentStatus)}\n`;
+                });
+                downloadCSV(csv, `Payroll_${m}_${y}.csv`); logSystemActivity("Exported Payroll Summary", "Data Export");
+            } else if(type === 'audit') {
+                let csv = "Timestamp,Actor,Title,Activity\n";
+                allLogs.forEach(l => csv += `${escapeCSV(l.timestamp)},${escapeCSV(l.actor)},${escapeCSV(l.title)},${escapeCSV(l.activity)}\n`);
+                downloadCSV(csv, "Full_Audit_Trail.csv"); logSystemActivity("Exported Audit Logs", "Security Export");
+            }
+        }
 
+        async function initApp() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                else await signInAnonymously(auth);
+            } catch(e) {}
+        }
+
+        // --- APP INITIALIZATION ---
         window.onload = async () => {
-            await openDB();
-            const yrSelect = document.getElementById('payrollYear');
-            const curYear = new Date().getFullYear();
-            for(let i=0; i<5; i++) { const o = document.createElement('option'); o.value = curYear - i; o.innerText = curYear - i; yrSelect.appendChild(o); }
+            const now = new Date(); // Scope Fixed
+            setInterval(() => { const el = document.getElementById('currentTimeDisplay'); if(el) el.innerText = new Date().toLocaleTimeString(); }, 1000);
+            
+            const yrSel = document.getElementById('payrollYear');
+            if(yrSel) { for(let i=0; i<5; i++) { const o = document.createElement('option'); o.value = now.getFullYear() - i; o.innerText = now.getFullYear() - i; yrSel.appendChild(o); } }
+            const mSel = document.getElementById('payrollMonth'); if(mSel) mSel.value = now.getMonth() + 1;
 
-            document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                if(document.getElementById('loginUsername').value === 'admin' && document.getElementById('loginPassword').value === 'password') {
-                    localStorage.setItem('isLoggedIn', 'true');
-                    document.getElementById('loginFormModal').classList.add('hidden');
-                    document.getElementById('appContainer').classList.remove('hidden');
-                    await logSystemActivity("Secure login established.", "Access");
-                    refreshUI();
+            await initApp();
+
+            onAuthStateChanged(auth, u => {
+                currentUser = u;
+                if (currentUser) {
+                    const disp = document.getElementById('userIdDisplay'); if(disp) disp.innerText = 'Connected';
+                    setupRealtimeListeners();
                 }
             });
 
-            document.getElementById('userForm')?.addEventListener('submit', async (e) => {
+            // HELPERS
+            const safeClick = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
+            const safeListen = (id, evt, fn) => { const el = document.getElementById(id); if(el) el.addEventListener(evt, fn); };
+
+            // LOGIN logic
+            safeListen('loginForm', 'submit', async (e) => {
                 e.preventDefault();
-                const userDocId = document.getElementById('userIdHidden').value;
-                const existing = userDocId ? allUsers.find(u => u.id === parseInt(userDocId)) : null;
-                const data = { 
-                    employeeId: document.getElementById('employeeId').value, firstName: document.getElementById('firstName').value, 
-                    lastName: document.getElementById('lastName').value, phoneNumber: document.getElementById('phoneNumber').value, 
+                const u = document.getElementById('loginUsername').value, p = document.getElementById('loginPassword').value;
+                if(u==='admin' && p==='password') { userPermissions = 'admin'; }
+                else {
+                    const acc = allAccounts.find(a => a.username === u && a.password === p);
+                    if(acc) userPermissions = acc.role;
+                    else { showModalDialog("Auth Failure", "Invalid credentials."); return; }
+                }
+                document.getElementById('loginFormModal')?.classList.add('hidden');
+                document.getElementById('appContainer')?.classList.remove('hidden');
+                document.getElementById('userIdDisplay').innerText = u;
+                document.getElementById('userRoleDisplay').innerText = userPermissions.toUpperCase() + ' LEVEL ACCESS';
+                filterNavByRole();
+                await logSystemActivity("Authenticated", "System Entry");
+            });
+
+            // MODAL SUBMITS
+            safeListen('userForm', 'submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('userIdHidden')?.value;
+                const data = {
+                    employeeId: document.getElementById('employeeId').value, firstName: document.getElementById('firstName').value,
+                    lastName: document.getElementById('lastName').value, phoneNumber: document.getElementById('phoneNumber').value,
                     nationalIdType: document.getElementById('nationalIdType').value, idNumber: document.getElementById('idNumber').value,
                     role: document.getElementById('userRole').value, shift: document.getElementById('userShift').value,
                     location: document.getElementById('location').value, resAddress: document.getElementById('resAddress').value,
                     gpsAddress: document.getElementById('gpsAddress').value, employmentDate: document.getElementById('employmentDate').value,
-                    createdAt: existing ? existing.createdAt : new Date().toISOString() 
+                    guarantorFirstName: document.getElementById('guarantorFirstName').value,
+                    guarantorLastName: document.getElementById('guarantorLastName').value,
+                    guarantorPhone: document.getElementById('guarantorPhone').value,
+                    guarantorOccupation: document.getElementById('guarantorOccupation').value,
+                    guarantorGps: document.getElementById('guarantorGps').value,
+                    guarantorIdNumber: document.getElementById('guarantorIdNumber').value,
+                    guarantorAddress: document.getElementById('guarantorAddress').value,
                 };
-                await putDataInStore('managedUsers', userDocId ? { ...data, id: parseInt(userDocId) } : data);
-                document.getElementById('userFormModal').classList.add('hidden');
-                await logSystemActivity(userDocId ? `Modified staff: ${data.firstName}` : `Enlisted staff: ${data.firstName}`, "Staff Mgt");
+                if(id) await updateDoc(doc(usersCol, id), data); else await addDoc(usersCol, data);
+                document.getElementById('userFormModal')?.classList.add('hidden');
+                await logSystemActivity(id ? `Staff edit: ${data.firstName}` : `Hire personnel: ${data.firstName}`, "HR Action");
             });
 
-            document.getElementById('editPayrollForm')?.addEventListener('submit', async (e) => {
+            safeListen('accountForm', 'submit', async (e) => {
                 e.preventDefault();
-                const userId = parseInt(document.getElementById('editPayrollUserId').value), month = getSelectedMonth(), year = getSelectedYear();
-                let existingRec = allPayrollRecords.find(r => r.userId === userId && r.month === month && r.year === year);
-                const data = { 
-                    userId, month, year, 
-                    revenue: parseFloat(document.getElementById('editRevenue').value) || 0, 
-                    daysWorked: parseInt(document.getElementById('editDaysWorked').value) || 0, 
-                    bonus: parseFloat(document.getElementById('editBonus').value) || 0, 
-                    paymentStatus: document.getElementById('editPaymentStatus').value 
-                };
-                if(existingRec) data.id = existingRec.id;
-                await putDataInStore('payrollRecords', data);
-                document.getElementById('editPayrollModal').classList.add('hidden');
-                const user = allUsers.find(u => u.id === userId);
-                await logSystemActivity(`Authorized payroll update for ${user.firstName} for ${month}/${year}`, "Finance");
+                const sid = document.getElementById('accountStaffId').value;
+                const data = { userId: sid, role: document.getElementById('accountRole').value, username: document.getElementById('accountUsername').value, password: document.getElementById('accountPassword').value };
+                await setDoc(doc(accountsCol, sid), data);
+                document.getElementById('accountFormModal')?.classList.add('hidden');
+                await logSystemActivity(`Account provisioned for ${data.username}`, "Access Control");
             });
 
-            document.getElementById('incidentForm')?.addEventListener('submit', async (e) => {
+            safeListen('editPayrollForm', 'submit', async (e) => {
                 e.preventDefault();
-                const id = document.getElementById('incidentId').value;
-                const existing = id ? allIncidents.find(inc => inc.id === parseInt(id)) : null;
-                const item = { 
-                    title: document.getElementById('incidentTitle').value, 
-                    description: document.getElementById('incidentDescription').value, 
-                    location: document.getElementById('incidentLocation').value, 
-                    reporter: document.getElementById('incidentReporter').value, 
-                    timestamp: existing ? existing.timestamp : new Date().toISOString(), 
-                    status: existing ? existing.status : 'Open',
-                    resolutionComment: document.getElementById('resolutionComment').value
+                const sid = document.getElementById('editPayrollUserId').value, m = getSelectedMonth(), y = getSelectedYear();
+                const data = { userId: sid, month: m, year: y, revenue: parseFloat(document.getElementById('editRevenue').value) || 0, daysWorked: parseInt(document.getElementById('editDaysWorked').value) || 0, bonus: parseFloat(document.getElementById('editBonus').value) || 0, paymentStatus: document.getElementById('editPaymentStatus').value };
+                await setDoc(doc(payrollCol, `${sid}_${m}_${y}`), data);
+                document.getElementById('editPayrollModal')?.classList.add('hidden');
+                await logSystemActivity("Compensation entry finalized", "Finance");
+            });
+
+            safeListen('incidentForm', 'submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('incidentId')?.value;
+                const existing = id ? allIncidents.find(inc => inc.id === id) : null;
+                const data = {
+                    title: document.getElementById('incidentTitle').value,
+                    description: document.getElementById('incidentDescription').value,
+                    location: document.getElementById('incidentLocation').value,
+                    reporter: document.getElementById('incidentReporter').value,
+                    resolutionComment: document.getElementById('resolutionComment')?.value || '',
+                    timestamp: existing ? existing.timestamp : new Date().toISOString(),
+                    status: existing ? existing.status : 'Open'
                 };
-                await putDataInStore('incidents', id ? { ...item, id: parseInt(id) } : item);
-                document.getElementById('incidentFormModal').classList.add('hidden');
-                await logSystemActivity(id ? `Updated Incident Dossier: ${item.title}` : `Logged New Incident: ${item.title}`, "Operations");
+                if(id) await updateDoc(doc(incidentsCol, id), data); else await addDoc(incidentsCol, data);
+                document.getElementById('incidentFormModal')?.classList.add('hidden');
+                await logSystemActivity("Incident dossier committed", "Ops Action");
             });
 
-            // Listeners
-            document.getElementById('openUserFormBtn')?.addEventListener('click', () => { 
-                document.getElementById('userForm').reset(); 
-                document.getElementById('userIdHidden').value = ''; 
-                document.getElementById('employeeId').value = generateNextBadgeId(allUsers); 
-                document.getElementById('userFormModal').classList.remove('hidden'); 
+            safeListen('companySettingsForm', 'submit', async (e) => {
+                e.preventDefault();
+                const data = { companyName: document.getElementById('companyNameInput').value, logoUrl: document.getElementById('logoUrlInput').value, faviconUrl: "", darkMode: false };
+                await setDoc(settingsDocRef, data);
+                await logSystemActivity("Settings parameters committed", "Config");
             });
-            document.getElementById('openIncidentFormBtn')?.addEventListener('click', () => { 
-                document.getElementById('incidentForm').reset(); 
-                document.getElementById('incidentId').value = '';
-                document.getElementById('resolutionCommentField').classList.add('hidden');
-                document.getElementById('incidentFormModal').classList.remove('hidden'); 
+
+            // CLICKS Delegation
+            window.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('update-incident')) {
+                    const i = allIncidents.find(item => item.id === e.target.dataset.id);
+                    if(!i) return;
+                    document.getElementById('incidentId').value = i.id;
+                    document.getElementById('incidentTitle').value = i.title;
+                    document.getElementById('incidentDescription').value = i.description;
+                    document.getElementById('incidentLocation').value = i.location;
+                    document.getElementById('incidentReporter').value = i.reporter;
+                    document.getElementById('resolutionComment').value = i.resolutionComment || '';
+                    document.getElementById('resolutionCommentField')?.classList.remove('hidden');
+                    document.getElementById('incidentFormModal')?.classList.remove('hidden');
+                }
+                if (e.target.classList.contains('edit-user')) {
+                    const u = allUsers.find(item => item.id === e.target.dataset.id);
+                    if(!u) return;
+                    document.getElementById('userIdHidden').value = u.id;
+                    document.getElementById('employeeId').value = u.employeeId;
+                    document.getElementById('firstName').value = u.firstName;
+                    document.getElementById('lastName').value = u.lastName;
+                    document.getElementById('phoneNumber').value = u.phoneNumber;
+                    document.getElementById('userRole').value = u.role;
+                    document.getElementById('userShift').value = u.shift || 'Day';
+                    document.getElementById('location').value = u.location;
+                    document.getElementById('gpsAddress').value = u.gpsAddress || '';
+                    document.getElementById('resAddress').value = u.resAddress || '';
+                    document.getElementById('employmentDate').value = u.employmentDate || '';
+                    document.getElementById('guarantorFirstName').value = u.guarantorFirstName || '';
+                    document.getElementById('guarantorLastName').value = u.guarantorLastName || '';
+                    document.getElementById('guarantorPhone').value = u.guarantorPhone || '';
+                    document.getElementById('guarantorOccupation').value = u.guarantorOccupation || '';
+                    document.getElementById('guarantorGps').value = u.guarantorGps || '';
+                    document.getElementById('guarantorIdNumber').value = u.guarantorIdNumber || '';
+                    document.getElementById('guarantorAddress').value = u.guarantorAddress || '';
+                    document.getElementById('userFormModal')?.classList.remove('hidden');
+                }
+                if (e.target.classList.contains('status-btn')) {
+                    const states = ['Open', 'In Progress', 'Closed'];
+                    const next = states[(states.indexOf(e.target.dataset.status) + 1) % states.length];
+                    await updateDoc(doc(incidentsCol, e.target.dataset.id), { status: next });
+                }
+                if (e.target.classList.contains('manage-account')) {
+                    const sid = e.target.dataset.id, name = e.target.dataset.name, acc = allAccounts.find(a => a.userId === sid);
+                    document.getElementById('accountStaffId').value = sid;
+                    document.getElementById('accountStaffName').value = name;
+                    document.getElementById('accountUsername').value = acc ? acc.username : '';
+                    document.getElementById('accountPassword').value = acc ? acc.password : '';
+                    document.getElementById('accountRole').value = acc ? acc.role : 'ops';
+                    document.getElementById('accountFormModal')?.classList.remove('hidden');
+                }
+                if (e.target.classList.contains('edit-payroll')) {
+                    const staffId = e.target.dataset.id, m = getSelectedMonth(), y = getSelectedYear();
+                    const rec = allPayrollRecords.find(r => r.userId === staffId && r.month === m && r.year === y) || { revenue: 0, daysWorked: 0, bonus: 0, paymentStatus: 'Pending' };
+                    document.getElementById('editPayrollUserId').value = staffId;
+                    document.getElementById('editRevenue').value = rec.revenue || 0;
+                    document.getElementById('editDaysWorked').value = rec.daysWorked || 0;
+                    document.getElementById('editBonus').value = rec.bonus || 0;
+                    document.getElementById('editPaymentStatus').value = rec.paymentStatus;
+                    updateEditCalculations();
+                    document.getElementById('editPayrollModal')?.classList.remove('hidden');
+                }
+                if (e.target.classList.contains('delete-user')) { if(await showModalDialog("Verify", "Terminate personnel?", true)) await deleteDoc(doc(usersCol, e.target.dataset.id)); }
+                if (e.target.classList.contains('delete-incident')) { if(await showModalDialog("Verify", "Remove record?", true)) await deleteDoc(doc(incidentsCol, e.target.dataset.id)); }
+                const passBtn = e.target.closest('.password-toggle');
+                if (passBtn) { const input = document.getElementById(passBtn.dataset.target); if(input) input.type = input.type === 'password' ? 'text' : 'password'; }
             });
-            document.getElementById('logoutBtn')?.addEventListener('click', async () => { await logSystemActivity("Admin session terminated gracefully.", "Audit: System Exit"); localStorage.removeItem('isLoggedIn'); location.reload(); });
-            document.getElementById('menu-toggle')?.addEventListener('click', () => { document.getElementById('sidebar').classList.toggle('-translate-x-full'); });
-            
-            document.querySelectorAll('.nav-item').forEach(btn => { btn.addEventListener('click', (e) => { const mod = e.target.dataset.module; document.querySelectorAll('.module').forEach(m => m.classList.add('hidden')); document.getElementById(mod)?.classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(ni => ni.classList.remove('bg-sagittarius-gold','text-sagittarius-blue')); btn.classList.add('bg-sagittarius-gold','text-sagittarius-blue'); if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full'); }); });
-            
-            document.getElementById('companySettingsForm')?.addEventListener('submit', async (e) => { e.preventDefault(); const settings = { id: 1, companyName: document.getElementById('companyNameInput').value, logoUrl: document.getElementById('logoUrlInput').value, faviconUrl: document.getElementById('faviconUrlInput').value, darkMode: document.getElementById('darkModeToggle').checked }; await putDataInStore('settings', settings); await logSystemActivity("Updated Branding.", "Config"); await refreshUI(); showModal("Branding Committed", "Branding settings saved successfully."); });
-            
-            document.getElementById('downloadIncidentsBtn')?.addEventListener('click', async () => { let csv = "Title,Location,Reporter,Time,Status,Resolution\n"; allIncidents.forEach(i => csv += `"${i.title}","${i.location}","${i.reporter}","${i.timestamp}","${i.status}","${i.resolutionComment||''}"\n`); downloadCSV(csv, "DKB_Incidents.csv"); await logSystemActivity("Authorized export of incident log records.", "Audit: Data Export"); });
-            document.getElementById('downloadUsersBtn')?.addEventListener('click', async () => { let csv = "Badge,First,Last,Role,Shift,Deployment,Residential,GPS,Enlisted\n"; allUsers.forEach(u => csv += `"${u.employeeId}","${u.firstName}","${u.lastName}","${u.role}","${u.shift||'Day'}","${u.location}","${u.resAddress||''}","${u.gpsAddress||''}","${u.employmentDate}"\n`); downloadCSV(csv, "DKB_Staff_List.csv"); await logSystemActivity("Authorized export of personnel directory details.", "Audit: Data Export"); });
-            document.getElementById('downloadPayrollBtn')?.addEventListener('click', async () => { const m = getSelectedMonth(), y = getSelectedYear(); let csv = `Period: ${m}/${y}\nID,Name,Days,Gross,Tax,Net,Status\n`; allUsers.forEach(u => { const rec = allPayrollRecords.find(r => r.userId === u.id && r.month === m && r.year === y) || {daysWorked:0, bonus:0, paymentStatus:'Pending'}; const r = getRateByRole(u.role); const gross = Math.min(rec.daysWorked, 26) * r + Math.max(0, rec.daysWorked-26)*r + rec.bonus; csv += `"${u.employeeId}","${u.firstName}",${rec.daysWorked},${gross.toFixed(2)},${(gross*0.15).toFixed(2)},${(gross*0.85).toFixed(2)},"${rec.paymentStatus}"\n`; }); downloadCSV(csv, `DKB_Payroll_${m}_${y}.csv`); await logSystemActivity(`Authorized export of monthly payroll summary for ${m}/${y}.`, "Audit: Data Export"); });
-            document.getElementById('downloadLogsBtn')?.addEventListener('click', async () => { let csv = "Timestamp,Actor,Title,Activity\n"; allLogs.forEach(l => csv += `"${l.timestamp}","${l.actor}","${l.title}","${l.activity}"\n`); downloadCSV(csv, "DKB_Audit_Trail.csv"); await logSystemActivity("Authorized full export of system activity audit trails.", "Audit: Security Control"); });
 
-            document.getElementById('alertModalOk')?.addEventListener('click', () => document.getElementById('alertModalContainer').classList.add('hidden'));
-            document.getElementById('closeUserFormBtn')?.addEventListener('click', () => document.getElementById('userFormModal').classList.add('hidden'));
-            document.getElementById('closeIncidentFormBtn')?.addEventListener('click', () => document.getElementById('incidentFormModal').classList.add('hidden'));
-            document.getElementById('closeEditPayrollBtn')?.addEventListener('click', () => document.getElementById('editPayrollModal').classList.add('hidden'));
-            
-            document.getElementById('staffSearchInput')?.addEventListener('input', (e) => { renderUsers(allUsers.filter(u => u.firstName.toLowerCase().includes(e.target.value.toLowerCase()) || u.lastName.toLowerCase().includes(e.target.value.toLowerCase()) || u.employeeId.toLowerCase().includes(e.target.value.toLowerCase()))); });
-            document.getElementById('payrollSearchInput')?.addEventListener('input', (e) => { renderPayroll(allUsers.filter(u => u.firstName.toLowerCase().includes(e.target.value.toLowerCase()) || u.lastName.toLowerCase().includes(e.target.value.toLowerCase()) || u.employeeId.toLowerCase().includes(e.target.value.toLowerCase()))); });
-            document.getElementById('guardSearchInput')?.addEventListener('input', (e) => { const q = e.target.value.toLowerCase(); renderGuards(allUsers.filter(u => u.role === 'Guard' && (u.firstName.toLowerCase().includes(q) || u.lastName.toLowerCase().includes(q) || u.employeeId.toLowerCase().includes(q) || u.location.toLowerCase().includes(q)))); });
-            
-            document.getElementById('payrollMonth').addEventListener('change', () => renderPayroll());
-            document.getElementById('payrollYear').addEventListener('change', () => renderPayroll());
-            ['editDaysWorked', 'editBonus'].forEach(id => { document.getElementById(id)?.addEventListener('input', updateEditCalculations); });
+            // MODAL OPENERS
+            safeClick('openUserFormBtn', () => { document.getElementById('userForm')?.reset(); document.getElementById('userIdHidden').value = ''; document.getElementById('employeeId').value = generateNextBadgeId(allUsers); document.getElementById('userFormModal')?.classList.remove('hidden'); });
+            safeClick('openIncidentFormBtn', () => { document.getElementById('incidentForm')?.reset(); document.getElementById('incidentId').value = ''; document.getElementById('resolutionCommentField')?.classList.add('hidden'); document.getElementById('incidentFormModal')?.classList.remove('hidden'); });
 
-            updateClock(); setInterval(updateClock, 1000);
-            if (localStorage.getItem('isLoggedIn') === 'true') { document.getElementById('loginFormModal').classList.add('hidden'); document.getElementById('appContainer').classList.remove('hidden'); await refreshUI(); }
-        }
+            // MODAL CLOSERS
+            safeClick('closeUserFormBtn', () => document.getElementById('userFormModal')?.classList.add('hidden'));
+            safeClick('closeIncidentFormBtn', () => document.getElementById('incidentFormModal')?.classList.add('hidden'));
+            safeClick('closeAccountFormBtn', () => document.getElementById('accountFormModal')?.classList.add('hidden'));
+            safeClick('closeEditPayrollBtn', () => document.getElementById('editPayrollModal')?.classList.add('hidden'));
+            safeClick('logoutBtn', () => location.reload());
+            safeClick('menu-toggle', () => document.getElementById('sidebar')?.classList.toggle('-translate-x-full'));
+            safeClick('alertModalOk', () => document.getElementById('alertModalContainer')?.classList.add('hidden'));
+
+            // SEARCH & TRIGGERS
+            const safeInp = (id, fn) => { const el = document.getElementById(id); if(el) el.oninput = fn; };
+            safeInp('staffSearchInput', (e) => renderUsers(allUsers.filter(u => `${u.firstName} ${u.lastName} ${u.employeeId}`.toLowerCase().includes(e.target.value.toLowerCase()))));
+            safeInp('guardSearchInput', (e) => renderGuards(allUsers.filter(u => u.role === 'Security Guard' && `${u.firstName} ${u.lastName} ${u.location}`.toLowerCase().includes(e.target.value.toLowerCase()))));
+            safeInp('editDaysWorked', updateEditCalculations);
+            safeInp('editBonus', updateEditCalculations);
+
+            // DOWNLOAD HANDLERS
+            safeClick('downloadIncidentsBtn', () => downloadCSVHandler('incidents'));
+            safeClick('downloadUsersBtn', () => downloadCSVHandler('staff'));
+            safeClick('downloadPayrollBtn', () => downloadCSVHandler('payroll'));
+            safeClick('downloadLogsBtn', () => downloadCSVHandler('audit'));
+
+            // NAV logic
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.onclick = (e) => {
+                    document.querySelectorAll('.module').forEach(m => m.classList.add('hidden'));
+                    document.getElementById(e.currentTarget.dataset.module)?.classList.remove('hidden');
+                    document.querySelectorAll('.nav-item').forEach(ni => ni.classList.remove('bg-sagittarius-gold','text-sagittarius-blue'));
+                    e.currentTarget.classList.add('bg-sagittarius-gold','text-sagittarius-blue');
+                    if (window.innerWidth < 768) document.getElementById('sidebar')?.classList.add('-translate-x-full');
+                }
+            });
+        };
     </script>
 </body>
 </html>
-
-
-
